@@ -22,7 +22,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * produção existe só para o teste.
  */
 
-const ADMIN_SESSION_COOKIE = "crosshill_admin_session";
 const ADMIN_EMAIL = "admin@crosshill.test";
 const SESSION_DURATION_MS = 5 * 24 * 60 * 60 * 1000;
 
@@ -80,6 +79,7 @@ import {
   signInAdmin,
   type AdminSession,
 } from "@/src/features/admin/auth";
+import { ADMIN_SESSION_COOKIE } from "@/src/features/admin/sessionCookie";
 
 let consoleWarn: ReturnType<typeof vi.spyOn>;
 let consoleError: ReturnType<typeof vi.spyOn>;
