@@ -75,10 +75,14 @@ function pathnameDoRedirect(location: string | undefined, baseURL: string): stri
 }
 
 /**
- * Precondição do cenário do cookie forjado: o servidor sob teste está com o
- * Firebase Admin configurado, fora do modo emulador. Sem isso qualquer cookie
- * seria recusado por *configuração ausente* e o cenário ficaria verde pelo
- * motivo errado — por isso as verificações abaixo FALHAM em vez de pular.
+ * Precondição de todo o CT-21: o servidor sob teste está com o Firebase Admin
+ * configurado, fora do modo emulador. Sem isso qualquer cookie seria recusado
+ * por *configuração ausente*, e o cenário do cookie forjado ficaria verde pelo
+ * motivo errado — por isso as verificações abaixo FALHAM em vez de pular, e
+ * rodam explicitamente no `beforeAll` do describe, antes de qualquer cenário
+ * (incluindo o do cookie forjado): uma falha aqui precisa ser ruidosa e visível
+ * por si só, não uma checagem implícita escondida dentro do fluxo de outro
+ * teste.
  */
 async function assertServidorComFirebaseConfigurado(page: Page): Promise<void> {
   // (a) A configuração declara tudo que o Admin SDK e a autorização exigem —
@@ -123,6 +127,20 @@ async function assertServidorComFirebaseConfigurado(page: Page): Promise<void> {
 }
 
 test.describe("CT-21 · acesso não autorizado a superfícies administrativas", () => {
+  // Smoke check explícito do describe: roda antes de qualquer cenário deste
+  // describe (incluindo o do cookie forjado) e falha ruidosamente — em vez de
+  // ficar implícito dentro do fluxo de outro teste — se o Admin SDK não
+  // estiver com credencial real configurada. `browser.newPage()` porque
+  // `beforeAll` não recebe a fixture `page` (ela é por teste, não por worker).
+  test.beforeAll(async ({ browser }) => {
+    const page = await browser.newPage();
+    try {
+      await assertServidorComFirebaseConfigurado(page);
+    } finally {
+      await page.close();
+    }
+  });
+
   for (const rota of ROTAS_ADMIN_PROTEGIDAS) {
     test(`bloqueia leitura de ${rota} sem sessão`, async ({ request, baseURL }) => {
       const response = await request.get(rota, { maxRedirects: 0 });
@@ -224,7 +242,8 @@ test.describe("CT-21 · acesso não autorizado a superfícies administrativas", 
     context,
     baseURL,
   }) => {
-    await assertServidorComFirebaseConfigurado(page);
+    // Precondição (Admin SDK configurado, fora do modo emulador) já foi
+    // asserida explicitamente no `beforeAll` do describe, antes deste cenário.
 
     // A borda (`proxy.ts`) só vê que existe cookie; quem recusa o cookie inválido
     // é a verificação autoritativa `getAdminSession()`.
