@@ -149,7 +149,7 @@ export const bookingService = {
  * A fonte é o documento `configuracoes/profissional`, lido pela feature dona da
  * configuração através de `settingsService.getConfiguredProfessional()` (T6).
  * A entrada é pelo **service**, não pelo repository: `configuracoes` é outra
- * feature, e atravessar direto para a persistência dela puliaria a política de
+ * feature, e atravessar direto para a persistência dela pularia a política de
  * erro que ela aplica (`withDomainErrors`) e amarraria `agendamentos` ao formato
  * do documento. Quem semeia esse documento na primeira leitura, a partir de
  * `PROFISSIONAL_UNICO_NOME`, é o repository de `configuracoes` — este service não
