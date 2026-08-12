@@ -303,7 +303,7 @@ function toDocument(appointment: Appointment): Record<string, unknown> {
 function toAppointment(id: string, data: unknown): Appointment {
   try {
     if (typeof data !== "object" || data === null) {
-      throw new AppError("unexpected", "Documento vazio.");
+      throw new Error("Documento vazio.");
     }
 
     const campos = data as Record<string, unknown>;
@@ -355,7 +355,7 @@ function readTimestamp(value: unknown, field: string): string | null {
   }
 
   if (typeof value !== "string" || Number.isNaN(Date.parse(value))) {
-    throw new AppError("unexpected", `Campo ${field} inválido.`);
+    throw new Error(`Campo ${field} inválido.`);
   }
 
   return value;
