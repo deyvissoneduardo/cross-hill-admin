@@ -151,6 +151,17 @@ describe("ScheduleSlotGrid", () => {
     expect(screen.getAllByRole("checkbox")).toHaveLength(1);
   });
 
+  it("-> (negative companion) rejeita horário vazio sem criar novo slot", () => {
+    renderGrid([]);
+
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole("button", { name: feedbackTexts.acaoAdicionarHorario }));
+
+    expect(screen.getByText(dominioTexts.horarioInvalido)).toBeInTheDocument();
+    expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+  });
+
   it("exibe o toast de sucesso após salvar", async () => {
     const slot = toAvailabilitySlotDTO(buildSlot({ horario: "09:00" }), AGORA);
     const saveAction: SaveAvailabilityAction = vi.fn(async () =>
