@@ -72,8 +72,6 @@ export type AdminSeedData = {
   /** Nome do profissional único configurado. */
   profissional: string;
   horarios: typeof SEED_HORARIOS;
-  aparencia: typeof SEED_APARENCIA;
-  posAgendamento: typeof SEED_POS_AGENDAMENTO;
 };
 
 /**
@@ -122,8 +120,6 @@ export async function adminE2ESeed(page: Page): Promise<AdminSeedData> {
     dataAgenda,
     profissional: E2E_EMULATED_SERVER.profissional,
     horarios: SEED_HORARIOS,
-    aparencia: SEED_APARENCIA,
-    posAgendamento: SEED_POS_AGENDAMENTO,
   };
 }
 
