@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Arquivos do framework de agentes (skills, fixtures de eval) não são
+    // código do produto e usam CommonJS — ficam fora do lint da aplicação.
+    ".claude/**",
+    ".codex/**",
   ]),
 ]);
 

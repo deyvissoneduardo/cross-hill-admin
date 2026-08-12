@@ -1,26 +1,78 @@
 @import "tailwindcss";
 
+/**
+ * Tokens da feature (`design.md` §3.1 e §7).
+ *
+ * O produto assume direção escura utilitária: superfícies em cinzas escuros,
+ * texto claro de alto contraste e cor semântica reservada a estado/ação crítica.
+ * Não há flip por `prefers-color-scheme` — o painel administrativo prioriza dark
+ * theme mesmo quando a área do cliente usar cores configuradas pelo admin.
+ *
+ * Contraste verificado contra WCAG 2.1 AA (mínimo 4.5:1 para texto normal):
+ * `--color-muted` sobre `--color-surface-2` ≈ 7.1:1; `--color-danger` ≈ 6.6:1;
+ * `--color-success` ≈ 10.5:1; `--color-danger-foreground` sobre
+ * `--color-danger-surface` ≈ 5.2:1 (e ≈ 5.9:1 sobre `--color-danger-hover`).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+
+  /* Superfícies */
+  --color-background: #09090b;
+  --color-surface: #101013;
+  --color-surface-2: #17171a;
+  --color-surface-3: #232327;
+
+  /* Bordas */
+  --color-border: #27272a;
+  --color-border-strong: #3f3f46;
+
+  /* Texto */
+  --color-foreground: #fafafa;
+  --color-muted: #a1a1aa;
+
+  /* Ação primária (neutra — o painel evita decoração colorida) */
+  --color-accent: #fafafa;
+  --color-accent-hover: #e4e4e7;
+  --color-accent-foreground: #09090b;
+
+  /* Cores semânticas: badges, validação e ação destrutiva */
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+  /* Escurecido em relação ao vermelho 600 padrão: com `#dc2626` o rótulo do
+     botão destrutivo ficava em 4.4:1, abaixo do piso AA (CT-22 acusou). */
+  --color-danger-surface: #c81f1f;
+  --color-danger-hover: #b91c1c;
+  --color-danger-foreground: #fef2f2;
+
+  /* Foco visível (`design.md` §9) */
+  --color-focus-ring: #60a5fa;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Foco visível em qualquer elemento interativo, afastado da borda. É o piso de
+   acessibilidade: componentes podem reforçar, nunca remover. */
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Movimento reduzido (`design.md` §9): hover, toast e transição de cor param. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
