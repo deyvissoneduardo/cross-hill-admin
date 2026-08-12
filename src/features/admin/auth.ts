@@ -184,7 +184,12 @@ export function adminAction<Args extends unknown[], Result>(
  * Server Action do formulário de login.
  *
  * Sempre redireciona: `/admin` no sucesso, `/admin/login?erro=...` na falha —
- * com código genérico, para não revelar se o e-mail existe.
+ * com código genérico, para não revelar se o e-mail existe. Essa garantia
+ * cobre o corpo da resposta e o destino do redirect (sempre genéricos); ela
+ * NÃO cobre o tempo de resposta — o curto-circuito de autorização por e-mail
+ * abaixo responde mais rápido para "e-mail não é admin" do que para "e-mail
+ * é admin, senha errada", uma diferença observável (oráculo de timing) que
+ * este comentário não promete eliminar.
  */
 export async function signInAdmin(formData: FormData): Promise<void> {
   "use server";
