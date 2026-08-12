@@ -1,0 +1,18 @@
+feature: painel-admin-agendamentos
+version: v2-debits
+variant: web
+source: agent-spec-debt-resolution
+parent_version: v1
+current_step: tasks
+steps:
+  intent:
+    status: completed
+  scope:
+    status: completed
+  tasks:
+    status: completed
+  execution:
+    status: completed
+    tasks_total: 17
+    tasks_completed: 17
+    summary: "17/17 tasks concluidas. Nenhuma bloqueada."

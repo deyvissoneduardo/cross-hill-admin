@@ -1,0 +1,966 @@
+{
+  "schema_version": 1,
+  "framework": "sdd",
+  "feature": "painel-admin-agendamentos",
+  "version": "v1",
+  "atualizado_em": "2026-08-10",
+  "stack_discovery": {
+    "frente": "web",
+    "framework_app": "Next.js 16.3 App Router",
+    "ui": "React 19.2",
+    "language": "TypeScript",
+    "styling": "Tailwind CSS 4",
+    "existing_test_stack_found": false,
+    "testing_stack_rule_found": false,
+    "discovery_needed": true,
+    "discovery_notes": [
+      "package.json nao possui scripts ou dependencias de teste.",
+      "Framework recomendado: Vitest para unitario/integracao leve, React Testing Library para componentes, Playwright para E2E, axe-core ou @axe-core/playwright para acessibilidade.",
+      "Para Firestore, usar Firebase Emulator Suite em testes de integracao que validam transacao/operacao atomica.",
+      "Validar a documentacao local de Next em node_modules/next/dist/docs antes de implementar testes ou server actions, conforme AGENTS.md."
+    ],
+    "scripts_recomendados": {
+      "test": "vitest",
+      "test:watch": "vitest --watch",
+      "test:e2e": "playwright test",
+      "test:a11y": "playwright test --grep @a11y"
+    }
+  },
+  "casos_teste": [
+    {
+      "id": "CT-01",
+      "task_id": "T4",
+      "tipo": "COMPONENTE",
+      "categoria": "listagem_principal",
+      "titulo": "Exibe cards operacionais para agendamentos ativos",
+      "nome_teste": "renderiza cards com dados essenciais para aguardando e confirmados",
+      "criterios_aceitacao_validados": [
+        "CA-01"
+      ],
+      "invariant": "Agendamentos em aguardando agendamento ou confirmados devem aparecer como cards com cliente, telefone, profissional, data, horario e status.",
+      "owning_layer": "component",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "none",
+      "pre_condicoes": [
+        "Usuario administrador autenticado",
+        "Repositorio retorna agendamentos ativos"
+      ],
+      "dados_entrada": {
+        "agendamentos": [
+          {
+            "status": "aguardando agendamento"
+          },
+          {
+            "status": "confirmado"
+          }
+        ]
+      },
+      "resultado_esperado": "Cards exibem dados obrigatorios e status por texto.",
+      "mocks": [
+        "Mock apenas do boundary de leitura de dados."
+      ],
+      "passos": [
+        "Renderizar listagem",
+        "Validar cards por queries semanticas"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "CT-02"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Renderizar arvore com sessao admin valida via harness publico.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-02",
+      "task_id": "T4",
+      "tipo": "COMPONENTE",
+      "categoria": "listagem_principal",
+      "titulo": "Oculta agendamentos cancelados da tela principal",
+      "nome_teste": "nao renderiza cards com status cancelado",
+      "criterios_aceitacao_validados": [
+        "CA-02"
+      ],
+      "invariant": "Agendamentos cancelados nunca devem aparecer na listagem principal administrativa.",
+      "owning_layer": "component",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "none",
+      "pre_condicoes": [
+        "Repositorio retorna agendamento cancelado junto de ativos"
+      ],
+      "dados_entrada": {
+        "status": "cancelado"
+      },
+      "resultado_esperado": "Card cancelado ausente e card ativo presente.",
+      "mocks": [
+        "Mock da fonte de dados do container."
+      ],
+      "passos": [
+        "Renderizar listagem",
+        "Confirmar ausencia do cancelado"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "self"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Fixture de dados no boundary de leitura.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-03",
+      "task_id": "T4",
+      "tipo": "COMPONENTE",
+      "categoria": "confirmacao_admin",
+      "titulo": "Solicita confirmacao explicita antes de confirmar agendamento",
+      "nome_teste": "abre dialog antes de executar confirmacao administrativa",
+      "criterios_aceitacao_validados": [
+        "CA-03"
+      ],
+      "invariant": "A confirmacao administrativa so pode ser registrada depois de uma confirmacao explicita do administrador.",
+      "owning_layer": "component",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "none",
+      "pre_condicoes": [
+        "Card em aguardando agendamento renderizado"
+      ],
+      "dados_entrada": {
+        "status": "aguardando agendamento"
+      },
+      "resultado_esperado": "Dialog abre e mutacao nao roda antes da acao primaria.",
+      "mocks": [
+        "Spy na server action de confirmacao."
+      ],
+      "passos": [
+        "Clicar Confirmar",
+        "Validar dialog",
+        "Confirmar dialog"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "CT-04"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Estado do card via fixture publica.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-04",
+      "task_id": "T4",
+      "tipo": "COMPONENTE",
+      "categoria": "confirmacao_admin",
+      "titulo": "Impede confirmacao duplicada em agendamento ja confirmado",
+      "nome_teste": "bloqueia nova confirmacao quando status ja esta confirmado",
+      "criterios_aceitacao_validados": [
+        "CA-04"
+      ],
+      "invariant": "Um agendamento ja confirmado deve comunicar essa condicao e nao oferecer nova confirmacao administrativa.",
+      "owning_layer": "component",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "none",
+      "pre_condicoes": [
+        "Card confirmado renderizado"
+      ],
+      "dados_entrada": {
+        "status": "confirmado"
+      },
+      "resultado_esperado": "Card indica confirmado e acao Confirmar fica ausente ou desabilitada.",
+      "mocks": [
+        "Fixture de renderizacao."
+      ],
+      "passos": [
+        "Renderizar card",
+        "Validar badge",
+        "Validar acao indisponivel"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "self"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Fixture de agendamento confirmado.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-05",
+      "task_id": "T2",
+      "tipo": "INTEGRACAO",
+      "categoria": "cancelamento",
+      "titulo": "Cancela agendamento e libera horario",
+      "nome_teste": "cancelarAgendamento remove da listagem ativa e torna slot disponivel",
+      "criterios_aceitacao_validados": [
+        "CA-05"
+      ],
+      "invariant": "Cancelar agendamento deve persistir cancelamento, excluir da listagem principal e liberar horario.",
+      "owning_layer": "service-integration",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "db",
+      "pre_condicoes": [
+        "Firebase Emulator Suite ativo",
+        "Agendamento ocupa slot liberado"
+      ],
+      "dados_entrada": {
+        "agendamentoId": "ag-cancel-001"
+      },
+      "resultado_esperado": "Agendamento cancelado, listagem ativa sem item e disponibilidade inclui slot.",
+      "mocks": [
+        "Nao mockar repository nem Firestore."
+      ],
+      "passos": [
+        "Seed",
+        "Executar cancelamento",
+        "Consultar listagem e disponibilidade"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "CT-06"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Seed via SDK admin apontando para Firestore Emulator.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-06",
+      "task_id": "T2",
+      "tipo": "INTEGRACAO",
+      "categoria": "cancelamento",
+      "titulo": "Rejeita cancelamento invalido sem efeitos colaterais",
+      "nome_teste": "cancelarAgendamento inexistente nao libera slots indevidos",
+      "criterios_aceitacao_validados": [
+        "CA-05"
+      ],
+      "invariant": "Cancelar agendamento inexistente ou ja cancelado nao deve alterar disponibilidade nao relacionada.",
+      "owning_layer": "service-integration",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "db",
+      "pre_condicoes": [
+        "Firebase Emulator Suite ativo"
+      ],
+      "dados_entrada": {
+        "agendamentoId": "ag-inexistente"
+      },
+      "resultado_esperado": "Erro especifico e slot de controle permanece indisponivel.",
+      "mocks": [
+        "Nao mockar repository nem Firestore."
+      ],
+      "passos": [
+        "Seed",
+        "Executar cancelamento invalido",
+        "Validar nao-mutacao"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "self"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Seed no emulador.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-07",
+      "task_id": "T3",
+      "tipo": "UNITARIO",
+      "categoria": "mensagens_cliente",
+      "titulo": "Gera mensagem de comunicacao com dados do agendamento",
+      "nome_teste": "buildMensagemCliente inclui nome data horario e profissional",
+      "criterios_aceitacao_validados": [
+        "CA-06"
+      ],
+      "invariant": "Mensagem de confirmacao ou cancelamento deve conter nome, data, horario e profissional.",
+      "owning_layer": "unit",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "none",
+      "pre_condicoes": [
+        "Builder recebe agendamento valido"
+      ],
+      "dados_entrada": {
+        "acao": "confirmacao"
+      },
+      "resultado_esperado": "Mensagem contem todos os campos e URL e codificada quando aplicavel.",
+      "mocks": [
+        "Nenhum; funcao pura."
+      ],
+      "passos": [
+        "Chamar builder",
+        "Validar dados obrigatorios"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "CT-08"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Chamada direta da funcao pura.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-08",
+      "task_id": "T3",
+      "tipo": "UNITARIO",
+      "categoria": "mensagens_cliente",
+      "titulo": "Nao gera mensagem incompleta para comunicacao",
+      "nome_teste": "buildMensagemCliente rejeita dados obrigatorios ausentes",
+      "criterios_aceitacao_validados": [
+        "CA-06"
+      ],
+      "invariant": "Mensagem para cliente nao deve ser disponibilizada quando faltar dado obrigatorio.",
+      "owning_layer": "unit",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "none",
+      "pre_condicoes": [
+        "Builder recebe payload incompleto"
+      ],
+      "dados_entrada": {
+        "profissional": ""
+      },
+      "resultado_esperado": "Erro tipado e nenhuma mensagem final.",
+      "mocks": [
+        "Nenhum."
+      ],
+      "passos": [
+        "Chamar builder incompleto",
+        "Validar erro"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "self"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Chamada direta da funcao pura.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-09",
+      "task_id": "T7",
+      "tipo": "INTEGRACAO",
+      "categoria": "disponibilidade",
+      "titulo": "Lista apenas horarios liberados e desocupados para o cliente",
+      "nome_teste": "consultarDisponibilidadePublica retorna somente slots liberados sem agendamento ativo",
+      "criterios_aceitacao_validados": [
+        "CA-07",
+        "CA-08"
+      ],
+      "invariant": "Cliente so pode solicitar slots liberados e sem solicitacao aguardando ou confirmada.",
+      "owning_layer": "service-integration",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "db",
+      "pre_condicoes": [
+        "Firebase Emulator Suite ativo",
+        "Slots liberados, bloqueados e ocupados existem"
+      ],
+      "dados_entrada": {
+        "data": "2026-08-23"
+      },
+      "resultado_esperado": "Somente slot livre e liberado fica solicitavel.",
+      "mocks": [
+        "Nao mockar repository nem Firestore."
+      ],
+      "passos": [
+        "Seed",
+        "Consultar disponibilidade publica",
+        "Validar filtragem"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "CT-10"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Seed no Firestore Emulator.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-10",
+      "task_id": "T7",
+      "tipo": "INTEGRACAO",
+      "categoria": "disponibilidade",
+      "titulo": "Rejeita solicitacao para slot bloqueado ou ocupado",
+      "nome_teste": "solicitarAgendamento falha para slot indisponivel",
+      "criterios_aceitacao_validados": [
+        "CA-07",
+        "CA-08"
+      ],
+      "invariant": "Slots bloqueados ou ocupados nao podem gerar nova solicitacao.",
+      "owning_layer": "service-integration",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "db",
+      "pre_condicoes": [
+        "Firebase Emulator Suite ativo",
+        "Slot indisponivel existe"
+      ],
+      "dados_entrada": {
+        "slot": "ocupado"
+      },
+      "resultado_esperado": "Erro de horario indisponivel e nenhum agendamento duplicado.",
+      "mocks": [
+        "Nao mockar repository nem Firestore."
+      ],
+      "passos": [
+        "Seed slot ocupado",
+        "Solicitar mesmo slot",
+        "Validar erro"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "self"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Seed no Firestore Emulator.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-11",
+      "task_id": "T2",
+      "tipo": "INTEGRACAO",
+      "categoria": "concorrencia",
+      "titulo": "Aceita no maximo uma reserva simultanea para o mesmo horario",
+      "nome_teste": "transacaoDeReserva aceita apenas uma solicitacao concorrente por slot",
+      "criterios_aceitacao_validados": [
+        "CA-09"
+      ],
+      "invariant": "Duas solicitacoes concorrentes para o mesmo horario resultam em no maximo um agendamento aceito.",
+      "owning_layer": "service-integration",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "db",
+      "pre_condicoes": [
+        "Firebase Emulator Suite ativo",
+        "Slot liberado e livre existe"
+      ],
+      "dados_entrada": {
+        "clientesConcorrentes": [
+          "Cliente 1",
+          "Cliente 2"
+        ]
+      },
+      "resultado_esperado": "Uma operacao sucesso, outra conflito, banco com um agendamento ativo.",
+      "mocks": [
+        "Nao mockar Firestore nem repository."
+      ],
+      "passos": [
+        "Seed",
+        "Disparar chamadas paralelas",
+        "Validar cardinalidade"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "CT-12"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Chamadas paralelas reais contra emulador.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-12",
+      "task_id": "T2",
+      "tipo": "INTEGRACAO",
+      "categoria": "concorrencia",
+      "titulo": "Nao aceita reserva quando o horario ja estava ocupado",
+      "nome_teste": "transacaoDeReserva rejeita slot previamente ocupado",
+      "criterios_aceitacao_validados": [
+        "CA-09"
+      ],
+      "invariant": "Horario previamente ocupado nao deve aceitar nenhuma nova solicitacao.",
+      "owning_layer": "service-integration",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "db",
+      "pre_condicoes": [
+        "Firebase Emulator Suite ativo",
+        "Slot ja ocupado"
+      ],
+      "dados_entrada": {
+        "slot": "ocupado"
+      },
+      "resultado_esperado": "Todas tentativas falham e banco preserva agendamento original.",
+      "mocks": [
+        "Nao mockar Firestore nem repository."
+      ],
+      "passos": [
+        "Seed ocupado",
+        "Disparar tentativas",
+        "Validar nenhuma criacao"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "self"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Seed no emulador.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-13",
+      "task_id": "T5",
+      "tipo": "COMPONENTE",
+      "categoria": "profissional_unico",
+      "titulo": "Usa profissional unico sem oferecer CRUD administrativo",
+      "nome_teste": "admin mostra profissional configurado e nao renderiza acoes de crud de profissionais",
+      "criterios_aceitacao_validados": [
+        "CA-10"
+      ],
+      "invariant": "Agenda, cards e mensagens usam profissional configurado e nao oferecem CRUD.",
+      "owning_layer": "component",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "none",
+      "pre_condicoes": [
+        "Configuracao possui profissional unico"
+      ],
+      "dados_entrada": {
+        "profissional": "Profissional CrossHill"
+      },
+      "resultado_esperado": "Nome aparece e acoes CRUD ausentes.",
+      "mocks": [
+        "Mock da leitura de configuracao/profissional."
+      ],
+      "passos": [
+        "Renderizar tela",
+        "Validar profissional",
+        "Validar ausencia CRUD"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "CT-14"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Provider/configuracao publica do modulo.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-14",
+      "task_id": "T8",
+      "tipo": "SEGURANCA",
+      "categoria": "profissional_unico",
+      "titulo": "Bloqueia superficie administrativa de CRUD de profissional",
+      "nome_teste": "rotasOuServerActionsDeProfissionalNaoPermitemMutacaoNaV1",
+      "criterios_aceitacao_validados": [
+        "CA-10"
+      ],
+      "invariant": "A v1 nao deve expor rota ou server action para mutar profissionais.",
+      "owning_layer": "route-integration",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "http",
+      "pre_condicoes": [
+        "Servidor Next de teste iniciado"
+      ],
+      "dados_entrada": {
+        "tentativas": [
+          "POST /admin/profissionais",
+          "PATCH /admin/profissionais/id",
+          "DELETE /admin/profissionais/id"
+        ]
+      },
+      "resultado_esperado": "Tentativas retornam 404, 405 ou 403 e nao alteram configuracao.",
+      "mocks": [
+        "Nao mockar autorizacao da rota."
+      ],
+      "passos": [
+        "Tentar rotas CRUD",
+        "Validar bloqueio"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "self"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Testar superficie HTTP/server action publica existente.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-15",
+      "task_id": "T6",
+      "tipo": "UNITARIO",
+      "categoria": "configuracoes_aparencia",
+      "titulo": "Aceita cores validas e legiveis",
+      "nome_teste": "validarCoresCliente aceita contraste WCAG AA",
+      "criterios_aceitacao_validados": [
+        "CA-11",
+        "CA-12"
+      ],
+      "invariant": "Cores so podem ser salvas quando pares preservam legibilidade WCAG 2.1 AA.",
+      "owning_layer": "unit",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "none",
+      "pre_condicoes": [
+        "Validator de cores como funcao pura"
+      ],
+      "dados_entrada": {
+        "background": "#0a0a0a",
+        "foreground": "#ededed"
+      },
+      "resultado_esperado": "Validator retorna valido.",
+      "mocks": [
+        "Nenhum."
+      ],
+      "passos": [
+        "Chamar validator",
+        "Validar resultado"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "CT-16"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Funcao pura de validacao.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-16",
+      "task_id": "T6",
+      "tipo": "UNITARIO",
+      "categoria": "configuracoes_aparencia",
+      "titulo": "Rejeita cores com legibilidade insuficiente",
+      "nome_teste": "validarCoresCliente rejeita contraste abaixo de WCAG AA",
+      "criterios_aceitacao_validados": [
+        "CA-12"
+      ],
+      "invariant": "Cores que prejudicam legibilidade nao devem ser aceitas nem persistidas.",
+      "owning_layer": "unit",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "none",
+      "pre_condicoes": [
+        "Validator de cores como funcao pura"
+      ],
+      "dados_entrada": {
+        "background": "#111111",
+        "foreground": "#222222"
+      },
+      "resultado_esperado": "Erro especifico de contraste.",
+      "mocks": [
+        "Nenhum."
+      ],
+      "passos": [
+        "Chamar validator invalido",
+        "Validar erro"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "self"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Funcao pura de validacao.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-17",
+      "task_id": "T6",
+      "tipo": "INTEGRACAO",
+      "categoria": "configuracoes_textos",
+      "titulo": "Salva textos de pos-agendamento para exibicao ao cliente",
+      "nome_teste": "salvarTextosPosAgendamento persiste titulo descricao dicas e avisos",
+      "criterios_aceitacao_validados": [
+        "CA-13"
+      ],
+      "invariant": "Textos configurados devem ser persistidos e retornados para a experiencia do cliente.",
+      "owning_layer": "service-integration",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "db",
+      "pre_condicoes": [
+        "Firebase Emulator Suite ativo",
+        "Usuario admin autorizado"
+      ],
+      "dados_entrada": {
+        "titulo": "Solicitacao recebida"
+      },
+      "resultado_esperado": "Consulta publica retorna textos persistidos.",
+      "mocks": [
+        "Nao mockar repository nem Firestore."
+      ],
+      "passos": [
+        "Salvar textos",
+        "Consultar configuracao",
+        "Validar campos"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "CT-18"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Seed e consulta real no Firestore Emulator.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-18",
+      "task_id": "T6",
+      "tipo": "INTEGRACAO",
+      "categoria": "configuracoes_textos",
+      "titulo": "Rejeita textos invalidos sem sobrescrever configuracao anterior",
+      "nome_teste": "salvarTextosPosAgendamento invalido preserva textos atuais",
+      "criterios_aceitacao_validados": [
+        "CA-13"
+      ],
+      "invariant": "Textos invalidos nao devem sobrescrever configuracao valida existente.",
+      "owning_layer": "service-integration",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "db",
+      "pre_condicoes": [
+        "Firebase Emulator Suite ativo",
+        "Configuracao valida existente"
+      ],
+      "dados_entrada": {
+        "titulo": ""
+      },
+      "resultado_esperado": "Erro de validacao e configuracao anterior preservada.",
+      "mocks": [
+        "Nao mockar repository nem Firestore."
+      ],
+      "passos": [
+        "Seed valido",
+        "Salvar invalido",
+        "Validar preservacao"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "self"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Seed no Firestore Emulator.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-19",
+      "task_id": "T4",
+      "tipo": "COMPONENTE",
+      "categoria": "confirmacoes_partes",
+      "titulo": "Mostra confirmacoes das partes e quem confirmou primeiro mantendo status canonico",
+      "nome_teste": "cardExibeConfirmacoesOrdemEStatusAguardando",
+      "criterios_aceitacao_validados": [
+        "CA-14",
+        "CA-15"
+      ],
+      "invariant": "Quando profissional e administrador confirmarem antes do horario, card mostra ambas, primeiro e status aguardando.",
+      "owning_layer": "component",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "clock",
+      "pre_condicoes": [
+        "Clock fixo antes do atendimento",
+        "Timestamps das duas confirmacoes"
+      ],
+      "dados_entrada": {
+        "adminConfirmadoEm": "2026-08-10T14:32:00-03:00",
+        "profissionalConfirmadoEm": "2026-08-10T15:10:00-03:00"
+      },
+      "resultado_esperado": "Card exibe ambas confirmacoes, primeiro administrador e status aguardando agendamento.",
+      "mocks": [
+        "Controlar clock."
+      ],
+      "passos": [
+        "Fixar clock",
+        "Renderizar card",
+        "Validar linhas e status"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "CT-20"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Fake timers ou helper publico de tempo.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-20",
+      "task_id": "T4",
+      "tipo": "COMPONENTE",
+      "categoria": "confirmacoes_partes",
+      "titulo": "Mostra pendencia quando apenas uma parte confirmou",
+      "nome_teste": "cardExibePartePendenteQuandoConfirmacaoIncompleta",
+      "criterios_aceitacao_validados": [
+        "CA-14",
+        "CA-15"
+      ],
+      "invariant": "Com apenas uma confirmacao, card mostra parte confirmada, parte pendente e status aguardando.",
+      "owning_layer": "component",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "clock",
+      "pre_condicoes": [
+        "Clock fixo antes do atendimento"
+      ],
+      "dados_entrada": {
+        "adminConfirmadoEm": "2026-08-10T14:32:00-03:00",
+        "profissionalConfirmadoEm": null
+      },
+      "resultado_esperado": "Administrador confirmado, profissional pendente e status preservado.",
+      "mocks": [
+        "Controlar clock."
+      ],
+      "passos": [
+        "Renderizar card",
+        "Validar pendencia",
+        "Validar status"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "self"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Fixture de renderizacao e clock controlado.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-21",
+      "task_id": "T1",
+      "tipo": "SEGURANCA",
+      "categoria": "autorizacao_admin",
+      "titulo": "Bloqueia acesso nao autorizado a superficies administrativas",
+      "nome_teste": "usuarioNaoAutorizadoNaoAcessaListagensMutacoesAgendaDisponibilidadeOuConfiguracoes",
+      "criterios_aceitacao_validados": [
+        "CA-16"
+      ],
+      "invariant": "Pessoa nao autorizada nao acessa listagens administrativas nem executa mutacoes.",
+      "owning_layer": "route-integration",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "http",
+      "pre_condicoes": [
+        "Servidor Next em teste",
+        "Nenhuma sessao Firebase Authentication valida"
+      ],
+      "dados_entrada": {
+        "rotasOuAcoes": [
+          "GET /admin/agendamentos",
+          "server actions administrativas"
+        ]
+      },
+      "resultado_esperado": "401/403 ou redirecionamento e Firestore sem mutacoes.",
+      "mocks": [
+        "Nao mockar autorizacao do SUT."
+      ],
+      "passos": [
+        "Acessar sem sessao",
+        "Executar mutacoes",
+        "Validar bloqueio e nao-mutacao"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "self"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Ausencia real de sessao; sessoes positivas via Firebase Auth Emulator.",
+        "teste_analogo": "NENHUM"
+      }
+    },
+    {
+      "id": "CT-22",
+      "task_id": "T8",
+      "tipo": "ACESSIBILIDADE",
+      "categoria": "wcag_admin",
+      "titulo": "Fluxos administrativos principais preservam acessibilidade WCAG 2.1 AA",
+      "nome_teste": "adminDashboardAgendaConfiguracoesNaoTemViolacoesCriticasDeA11y",
+      "criterios_aceitacao_validados": [
+        "CA-01",
+        "CA-03",
+        "CA-05",
+        "CA-11",
+        "CA-12",
+        "CA-13",
+        "CA-16"
+      ],
+      "invariant": "Telas administrativas mantem teclado, nomes acessiveis, foco visivel, alvos adequados e contraste WCAG 2.1 AA.",
+      "owning_layer": "e2e",
+      "existing_suite": "NO_SUITE_FOUND",
+      "real_execution_boundary": "http",
+      "pre_condicoes": [
+        "Servidor Next de teste",
+        "Admin autenticado",
+        "Dados seedados"
+      ],
+      "dados_entrada": {
+        "viewports": [
+          "mobile",
+          "desktop"
+        ]
+      },
+      "resultado_esperado": "Playwright navega por teclado e axe sem violacoes criticas/serias.",
+      "mocks": [
+        "Nao mockar DOM nem componentes."
+      ],
+      "passos": [
+        "Abrir telas",
+        "Executar axe",
+        "Validar foco e nomes acessiveis"
+      ],
+      "negative_companion": {
+        "presente": true,
+        "ct_id": "CT-16"
+      },
+      "precondicao_privilegiada": {
+        "presente": false,
+        "caminho_legitimo": "Login programatico via mecanismo real suportado pelo ambiente de teste.",
+        "teste_analogo": "NENHUM"
+      }
+    }
+  ],
+  "cenarios_nao_cobertos": [
+    {
+      "descricao": "Mudanca operacional automatica quando chega a data/horario do atendimento.",
+      "motivo": "Sem criterio de aceite especifico alem de manter aguardando antes do horario em CA-15."
+    },
+    {
+      "descricao": "Integracao paga ou automatizada com provedor externo de mensagens.",
+      "motivo": "Fora do escopo da v1."
+    },
+    {
+      "descricao": "Cadastro publico, recuperacao de senha, login social, multiplos administradores e perfis.",
+      "motivo": "Explicitamente fora do escopo."
+    },
+    {
+      "descricao": "Historico avancado, auditoria completa, exportacao, disponibilidade recorrente e lista de espera.",
+      "motivo": "Roadmap futuro."
+    }
+  ],
+  "recomendacoes": [
+    "Adicionar testing-stack.md antes da implementacao final para fixar runner, comandos, convencoes de arquivo, uso de Firebase Emulator e politica de E2E.",
+    "Instalar Vitest, @testing-library/react, @testing-library/user-event, jsdom, Playwright e @axe-core/playwright, salvo decisao diferente validada pelo time.",
+    "Manter repositories reais em testes de integracao com Firestore Emulator; nao mockar o proprio repository para testar repository/service.",
+    "Separar validators puros para cores, textos, status e payloads de agendamento.",
+    "Criar builders de fixtures para agendamento, slot, configuracao e usuario admin.",
+    "Executar pelo menos CT-05, CT-09, CT-11, CT-17 e CT-21 no gate de CI.",
+    "Evitar snapshots de UI; usar assertions por role, texto acessivel, estado disabled, persistencia e efeitos observaveis."
+  ],
+  "mock_budget_observado": true,
+  "gates_aplicados": [
+    "invariant_first",
+    "owning_layer",
+    "real_execution",
+    "failure_means_fix_production",
+    "no_snapshot_without_contract",
+    "no_self_set_mock_assertion",
+    "negative_companion"
+  ]
+}

@@ -1,0 +1,28 @@
+feature: "Painel administrativo de agendamentos"
+current_step: execution
+variant: web
+source: "recommended"
+source_note: "O pre-refinement.md recomendou SDD e o usuário seguiu a recomendação."
+steps:
+  prd:
+    status: completed
+    summary: "12 US, 16 CA. Administrador opera agenda, confirmações, cancelamentos e configurações essenciais do cliente."
+  tech_alignment:
+    status: skipped
+  tech_spec:
+    status: completed
+    variant: web
+    summary: "Next App Router web, Firebase Auth/Firestore, Server Actions, 22 CTs, sem API HTTP interna; arquivos: 30+ criar, 4 modificar."
+  design:
+    status: completed
+    variant: "web"
+  validation:
+    status: skipped
+  task_plan:
+    status: completed
+    summary: "8 tasks, 5 fases, 0 paralelizaveis. US cobertas: 12/12"
+  execution:
+    status: completed
+    tasks_total: 8
+    tasks_completed: 8
+    summary: "8/8 tasks concluidas. Nenhuma bloqueada."
