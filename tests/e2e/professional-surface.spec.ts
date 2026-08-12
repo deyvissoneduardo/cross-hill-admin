@@ -30,6 +30,17 @@ import { adminE2ESeed, readProfessionalDocument } from "./fixtures/adminSeed";
  * passaria pela primeira asserção; a segunda o pega. O documento semeado tem
  * conteúdo fixo (inclusive `atualizadoEm`), então reexecuções paralelas do seed
  * não fazem a comparação oscilar.
+ *
+ * Limite conhecido desta camada: este caso prova ausência de ROTA, não ausência
+ * de Server Action. O despacho de Server Action é resolvido pelo header
+ * `Next-Action`, não por um caminho HTTP dedicado, então não há uma requisição
+ * que sonde "existe uma action de mutação de profissional?" da mesma forma que
+ * `GET`/`POST` sondam uma rota — a ausência de tal action não é observável pela
+ * borda e por isso não está sob teste aqui. A garantia vem de construção: toda
+ * action administrativa nasce de `adminAction()` (`src/features/admin/actions.ts`),
+ * e o módulo simplesmente não declara nenhuma para mutar o profissional único
+ * (PRD RN-10/RN-11) — não é um comportamento que precise ser verificado a cada
+ * execução, é a ausência de código.
  */
 
 // O seed exige o servidor com Firebase emulado — é onde uma sessão real pode
