@@ -86,6 +86,12 @@ const E2E_EMULATED_ENV = {
   ADMIN_EMAIL: E2E_FIREBASE_ADMIN_ENV.ADMIN_EMAIL,
   FIREBASE_AUTH_EMULATOR_HOST: AUTH_EMULATOR_HOST,
   FIRESTORE_EMULATOR_HOST: FIRESTORE_EMULATOR_HOST,
+  // `next start` fixa NODE_ENV=production internamente, e este servidor combina
+  // isso de propósito com o emulador (para CT-14/CT-22 emitirem sessão
+  // administrativa real offline). Sem esta flag, o guard de `buildAdminOptions()`
+  // trataria esse cenário legítimo como vazamento acidental de emulador em
+  // produção e derrubaria o login.
+  ALLOW_FIREBASE_EMULATOR_IN_PRODUCTION_BUILD: "1",
   NEXT_PUBLIC_FIREBASE_API_KEY: E2E_PUBLIC_API_KEY,
   PROFISSIONAL_UNICO_NOME: E2E_PROFISSIONAL,
 } as const;
@@ -179,7 +185,7 @@ export default defineConfig({
       // Sem `npm run build`: reaproveita o build da entrada anterior. Um segundo
       // build rodaria sobre o mesmo `.next` que o servidor acima já está
       // servindo.
-      command: `npx next start --port ${EMULATED_PORT}`,
+      command: `npx next start --port ${EMULATED_PORT} --hostname localhost`,
       url: E2E_EMULATED_SERVER.baseURL,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,

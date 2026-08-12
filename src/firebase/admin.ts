@@ -51,6 +51,22 @@ function buildAdminOptions(): { credential?: ReturnType<typeof cert>; projectId:
 
   // Com emulador não existe (nem deve existir) chave de serviço.
   if (isUsingEmulators()) {
+    // Vazar FIREBASE_AUTH_EMULATOR_HOST/FIRESTORE_EMULATOR_HOST para produção
+    // desativaria a verificação de assinatura do cookie de sessão em silêncio.
+    // Falha ruidosa no boot em vez de bypass de autenticação sem log.
+    if (
+      process.env.NODE_ENV === "production" &&
+      process.env.ALLOW_FIREBASE_EMULATOR_IN_PRODUCTION_BUILD !== "1"
+    ) {
+      console.error(
+        "[firebase-admin] configuração inválida: emulador detectado em NODE_ENV=production",
+      );
+      throw new AppError(
+        "unavailable",
+        "Configuração inválida: emulador do Firebase detectado em ambiente de produção.",
+      );
+    }
+
     return { projectId };
   }
 
