@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 
 import { ConfirmationDialog } from "@/src/features/admin/components/ConfirmationDialog";
 import { FeedbackBanner } from "@/src/features/admin/components/FeedbackBanner";
+import { APPOINTMENT_CARD_FRAME_CLASS } from "@/src/features/agendamentos/components/appointmentListLayout";
 import { ConfirmationTimeline } from "@/src/features/agendamentos/components/ConfirmationTimeline";
 import {
   type AppointmentDTO,
@@ -147,8 +148,7 @@ export function AppointmentCard({
       aria-labelledby={tituloId}
       aria-busy={pendente || undefined}
       className={
-        "flex h-full flex-col gap-3 rounded-lg border border-(--color-border) " +
-        "bg-(--color-surface-2) p-4 transition-colors duration-150 ease-out " +
+        `h-full ${APPOINTMENT_CARD_FRAME_CLASS} transition-colors duration-150 ease-out ` +
         "motion-reduce:transition-none hover:border-(--color-border-strong)"
       }
     >

@@ -16,3 +16,20 @@
  */
 export const APPOINTMENT_GRID_CLASS =
   "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3";
+
+/**
+ * Moldura visual do card de agendamento (`design.md` §4.2/§5): raio, borda,
+ * fundo e padding compartilhados entre o card real (`AppointmentCard`) e o
+ * card do esqueleto de carga (`AppointmentListSkeleton`).
+ *
+ * Existe como constante pelo mesmo motivo de `APPOINTMENT_GRID_CLASS`: sem
+ * ela, alterar raio/borda/padding do card real exige lembrar de replicar a
+ * mudança no esqueleto — e nada detecta o drift quando alguém esquece.
+ *
+ * `h-full` e as transições (`transition-colors`, `hover:border-...`) ficam de
+ * fora de propósito: são específicas do card real interativo e não fazem
+ * sentido no esqueleto estático.
+ */
+export const APPOINTMENT_CARD_FRAME_CLASS =
+  "flex flex-col gap-3 rounded-lg border border-(--color-border) " +
+  "bg-(--color-surface-2) p-4";

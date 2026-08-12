@@ -1,4 +1,7 @@
-import { APPOINTMENT_GRID_CLASS } from "@/src/features/agendamentos/components/appointmentListLayout";
+import {
+  APPOINTMENT_CARD_FRAME_CLASS,
+  APPOINTMENT_GRID_CLASS,
+} from "@/src/features/agendamentos/components/appointmentListLayout";
 import { Skeleton } from "@/src/shared/components/Skeleton";
 import { agendamentoTexts } from "@/src/shared/constants/texts";
 
@@ -31,10 +34,7 @@ export function AppointmentListSkeleton() {
         <div
           key={chave}
           data-testid="skeleton-card"
-          className={
-            "flex flex-col gap-3 rounded-lg border border-(--color-border) " +
-            "bg-(--color-surface-2) p-4"
-          }
+          className={APPOINTMENT_CARD_FRAME_CLASS}
         >
           <div className="flex items-start justify-between gap-3">
             {/* status */}
