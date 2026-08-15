@@ -28,6 +28,10 @@
 .DS_Store
 *.pem
 
+# firebase service account keys (nunca commitar credenciais reais)
+*firebase-adminsdk*.json
+serviceAccountKey*.json
+
 # firebase emulator (logs locais gerados por `npm run test:integration`)
 *-debug.log
 .firebase/
