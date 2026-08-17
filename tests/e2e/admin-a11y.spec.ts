@@ -92,7 +92,7 @@ for (const { nome, viewport } of a11yTestConfig.viewports) {
     test(`@a11y login administrativo sem violações críticas ou sérias em ${nome}`, async ({
       page,
     }) => {
-      await page.goto("/admin/login");
+      await page.goto("/");
       await expect(
         page.getByRole("heading", { level: 1, name: "Acesso administrativo" }),
       ).toBeVisible();

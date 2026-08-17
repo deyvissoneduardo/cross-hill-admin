@@ -37,6 +37,11 @@ const STATUS_AGUARDANDO: AppointmentStatus = "aguardando_agendamento";
 const STATUS_CONFIRMADO: AppointmentStatus = "confirmado";
 const STATUS_CANCELADO: AppointmentStatus = "cancelado";
 
+/** Status persistidos pelo schema original do Firestore (`admin.md` §4/§17). */
+const FIRESTORE_STATUS_AGUARDANDO = "AGUARDANDO_CONFIRMACAO";
+const FIRESTORE_STATUS_CONFIRMADO = "CONFIRMADO";
+const FIRESTORE_STATUS_CANCELADO = "CANCELADO";
+
 /**
  * Status que mantêm o agendamento na listagem ativa — todos menos `cancelado`.
  *
@@ -48,6 +53,12 @@ const STATUS_CANCELADO: AppointmentStatus = "cancelado";
 const STATUS_ATIVOS: readonly AppointmentStatus[] = [
   STATUS_AGUARDANDO,
   STATUS_CONFIRMADO,
+] as const;
+
+const FIRESTORE_STATUS_ATIVOS = [
+  ...STATUS_ATIVOS,
+  FIRESTORE_STATUS_AGUARDANDO,
+  FIRESTORE_STATUS_CONFIRMADO,
 ] as const;
 
 /**
@@ -75,15 +86,9 @@ export const appointmentRepository = {
    * Agendamentos que ainda exigem acompanhamento (PRD RN-01/RN-02).
    *
    * O filtro por status vive na query — é o que garante que cancelado não volta
-   * para a listagem principal nem por engano da UI. A ordenação cronológica
-   * também é da query (`data`, `horario`), e não de memória: o teto abaixo corta
-   * a lista, e cortar antes de ordenar deixaria de fora agendamentos de hoje em
-   * favor de agendamentos distantes, dependendo apenas do id gerado.
-   *
-   * `in` + `orderBy` exige o índice composto (`status`, `data`, `horario`)
-   * declarado em `firestore.indexes.json` e publicado com
-   * `firebase deploy --only firestore:indexes`. O emulador NÃO exige índice, então
-   * a suíte de integração passa sem ele — publicar é passo de deploy.
+   * para a listagem principal nem por engano da UI. Como o projeto implantado
+   * ainda não possui o índice composto, a ordenação cronológica ocorre depois
+   * do filtro retornado pelo Firestore e antes da aplicação do teto.
    *
    * Documento corrompido é descartado com log, não propagado: aqui um único
    * documento inválido derrubaria a listagem inteira do administrador (mesma
@@ -94,20 +99,28 @@ export const appointmentRepository = {
   async listActive(now: Date): Promise<AppointmentDTO[]> {
     const snapshot = await getFirestoreAdmin()
       .collection(firestorePaths.agendamentos())
-      .where("status", "in", STATUS_ATIVOS)
-      .orderBy("data")
-      .orderBy("horario")
-      .limit(MAX_AGENDAMENTOS_ATIVOS + 1)
+      .where("status", "in", FIRESTORE_STATUS_ATIVOS)
       .get();
 
-    const pagina = snapshot.docs.slice(0, MAX_AGENDAMENTOS_ATIVOS);
+    // O projeto Firebase ainda não possui o índice composto status/data/horário.
+    // A coleção é filtrada no servidor e ordenada aqui para que a tela funcione
+    // com o schema já implantado sem transformar índice de infraestrutura em 500.
+    const pagina = snapshot.docs
+      .sort((a, b) => {
+        const esquerda = a.data();
+        const direita = b.data();
+        return (
+          String(esquerda.data).localeCompare(String(direita.data)) ||
+          String(esquerda.horario).localeCompare(String(direita.horario)) ||
+          a.id.localeCompare(b.id)
+        );
+      })
+      .slice(0, MAX_AGENDAMENTOS_ATIVOS);
 
     if (snapshot.size > MAX_AGENDAMENTOS_ATIVOS) {
       console.warn("[agendamentos] listagem truncada", {
         limite: MAX_AGENDAMENTOS_ATIVOS,
-        // A query pede `limite + 1` justamente para detectar o excedente sem
-        // varrer a collection — o total real fora da página pode ser maior, e
-        // contá-lo exigiria a query sem teto que este teto existe para evitar.
+        // A consulta já exclui cancelados; o excedente conta somente ativos.
         foraDaListagemAoMenos: snapshot.size - MAX_AGENDAMENTOS_ATIVOS,
       });
     }
@@ -123,7 +136,18 @@ export const appointmentRepository = {
         continue;
       }
 
-      ativos.push(toAppointmentDTO(appointment, now));
+      const dto = toAppointmentDTO(appointment, now);
+
+      // No schema implantado, CONFIRMADO já é o estado final decidido pelo
+      // backend. Não o rederive pelas regras históricas de dupla confirmação.
+      if (
+        isFirestoreSchema(doc.data()) &&
+        doc.data().status === FIRESTORE_STATUS_CONFIRMADO
+      ) {
+        dto.status = STATUS_CONFIRMADO;
+      }
+
+      ativos.push(dto);
     }
 
     if (descartados > 0) {
@@ -220,7 +244,12 @@ export const appointmentRepository = {
       );
 
       const canceladoEm = now.toISOString();
-      tx.update(ref, { status: STATUS_CANCELADO, canceladoEm });
+      tx.update(
+        ref,
+        isFirestoreSchema(snapshot.data())
+          ? { status: FIRESTORE_STATUS_CANCELADO, canceladoEm }
+          : { status: STATUS_CANCELADO, canceladoEm },
+      );
 
       if (slot !== null && slot.agendamentoId === appointment.id) {
         releaseSlotInTransaction(tx, appointment.data, appointment.horario);
@@ -267,9 +296,23 @@ export const appointmentRepository = {
       }
 
       const adminConfirmadoEm = now.toISOString();
-      tx.update(ref, { adminConfirmadoEm });
+      tx.update(
+        ref,
+        isFirestoreSchema(snapshot.data())
+          ? { status: FIRESTORE_STATUS_CONFIRMADO, confirmadoEm: adminConfirmadoEm }
+          : { adminConfirmadoEm },
+      );
 
-      return toAppointmentDTO({ ...appointment, adminConfirmadoEm }, now);
+      return toAppointmentDTO(
+        {
+          ...appointment,
+          status: isFirestoreSchema(snapshot.data())
+            ? STATUS_CONFIRMADO
+            : appointment.status,
+          adminConfirmadoEm,
+        },
+        now,
+      );
     });
   },
 } as const;
@@ -308,15 +351,32 @@ function toAppointment(id: string, data: unknown): Appointment {
 
     const campos = data as Record<string, unknown>;
 
+    const firestoreSchema = isFirestoreSchema(campos);
+
     return {
       id,
-      cliente: appointmentValidators.assertCustomerName(campos.cliente),
-      telefone: appointmentValidators.assertPhone(campos.telefone),
-      profissional: appointmentValidators.assertProfessional(campos.profissional),
+      cliente: appointmentValidators.assertCustomerName(
+        firestoreSchema ? campos.nomeCliente : campos.cliente,
+      ),
+      telefone: appointmentValidators.assertPhone(
+        firestoreSchema
+          ? fromFirestorePhone(
+              campos.telefoneNormalizado ?? campos.telefoneExibicao ?? campos.telefone,
+            )
+          : campos.telefone,
+      ),
+      profissional: appointmentValidators.assertProfessional(
+        firestoreSchema ? campos.profissionalId : campos.profissional,
+      ),
       data: appointmentValidators.assertIsoDate(campos.data),
       horario: appointmentValidators.assertTimeOfDay(campos.horario),
-      status: appointmentValidators.assertStatus(campos.status),
-      adminConfirmadoEm: readTimestamp(campos.adminConfirmadoEm, "adminConfirmadoEm"),
+      status: firestoreSchema
+        ? fromFirestoreStatus(campos.status)
+        : appointmentValidators.assertStatus(campos.status),
+      adminConfirmadoEm: readTimestamp(
+        firestoreSchema ? campos.confirmadoEm : campos.adminConfirmadoEm,
+        firestoreSchema ? "confirmadoEm" : "adminConfirmadoEm",
+      ),
       profissionalConfirmadoEm: readTimestamp(
         campos.profissionalConfirmadoEm,
         "profissionalConfirmadoEm",
@@ -329,6 +389,41 @@ function toAppointment(id: string, data: unknown): Appointment {
       cause: error,
     });
   }
+}
+
+function isFirestoreSchema(data: unknown): boolean {
+  return typeof data === "object" && data !== null && "nomeCliente" in data;
+}
+
+function fromFirestoreStatus(value: unknown): AppointmentStatus {
+  switch (value) {
+    case FIRESTORE_STATUS_AGUARDANDO:
+      return STATUS_AGUARDANDO;
+    case FIRESTORE_STATUS_CONFIRMADO:
+      return STATUS_CONFIRMADO;
+    case FIRESTORE_STATUS_CANCELADO:
+      return STATUS_CANCELADO;
+    default:
+      return appointmentValidators.assertStatus(value);
+  }
+}
+
+/**
+ * O schema implantado persiste telefone normalizado em E.164 brasileiro
+ * (`55` + DDD + número); o domínio interno trabalha sem o código do país e o
+ * adiciona somente ao montar o link do WhatsApp.
+ */
+function fromFirestorePhone(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const digits = value.replace(/\D/g, "");
+  if (digits.startsWith("55") && (digits.length === 12 || digits.length === 13)) {
+    return digits.slice(2);
+  }
+
+  return value;
 }
 
 /**
@@ -348,15 +443,27 @@ function toAppointmentOrNull(id: string, data: unknown): Appointment | null {
   }
 }
 
-/** Timestamps são ISO-8601 UTC; ausente é `null`, presente e inválido é erro. */
+/** Aceita ISO-8601 e `Timestamp` nativo, usado nos documentos já implantados. */
 function readTimestamp(value: unknown, field: string): string | null {
   if (value === null || value === undefined) {
     return null;
   }
 
-  if (typeof value !== "string" || Number.isNaN(Date.parse(value))) {
-    throw new Error(`Campo ${field} inválido.`);
+  if (typeof value === "string" && !Number.isNaN(Date.parse(value))) {
+    return value;
   }
 
-  return value;
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toDate" in value &&
+    typeof value.toDate === "function"
+  ) {
+    const date = value.toDate();
+    if (date instanceof Date && !Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+
+  throw new Error(`Campo ${field} inválido.`);
 }

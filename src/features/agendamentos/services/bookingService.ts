@@ -59,9 +59,16 @@ export type AppointmentRequestInput = {
 export async function listActiveAppointments(
   now: Date = new Date(),
 ): Promise<AppointmentDTO[]> {
-  return withDomainErrors(ESCOPO, "listagem", () =>
-    appointmentRepository.listActive(now),
-  );
+  return withDomainErrors(ESCOPO, "listagem", async () => {
+    const [agendamentos, profissional] = await Promise.all([
+      appointmentRepository.listActive(now),
+      readProfessionalForDisplay(),
+    ]);
+
+    return profissional === null
+      ? agendamentos
+      : agendamentos.map((agendamento) => ({ ...agendamento, profissional }));
+  });
 }
 
 /**
@@ -81,9 +88,10 @@ export async function confirmAdminAppointment(
 ): Promise<AppointmentDTO> {
   const id = appointmentValidators.assertAppointmentId(agendamentoId);
 
-  return withDomainErrors(ESCOPO, "confirmacao", () =>
-    appointmentRepository.confirmAdmin(id, now),
-  );
+  return withDomainErrors(ESCOPO, "confirmacao", async () => {
+    const confirmado = await appointmentRepository.confirmAdmin(id, now);
+    return applyProfessionalForDisplay(confirmado);
+  });
 }
 
 /**
@@ -98,9 +106,10 @@ export async function cancelAppointment(
 ): Promise<AppointmentDTO> {
   const id = appointmentValidators.assertAppointmentId(agendamentoId);
 
-  return withDomainErrors(ESCOPO, "cancelamento", () =>
-    appointmentRepository.cancelReleasingSlot(id, now),
-  );
+  return withDomainErrors(ESCOPO, "cancelamento", async () => {
+    const cancelado = await appointmentRepository.cancelReleasingSlot(id, now);
+    return applyProfessionalForDisplay(cancelado);
+  });
 }
 
 /**
@@ -176,5 +185,28 @@ async function resolveProfissionalUnico(): Promise<string> {
       tipo: error instanceof Error ? error.name : typeof error,
     });
     throw new AppError("unavailable", dominioTexts.servicoIndisponivel);
+  }
+}
+
+/**
+ * Nome usado nos cards e mensagens. Falha de configuração não pode transformar
+ * uma confirmação já persistida em aparente erro da ação; nesse caso o DTO
+ * conserva o identificador que veio do agendamento e a causa permanece no log.
+ */
+async function applyProfessionalForDisplay(
+  agendamento: AppointmentDTO,
+): Promise<AppointmentDTO> {
+  const profissional = await readProfessionalForDisplay();
+  return profissional === null ? agendamento : { ...agendamento, profissional };
+}
+
+async function readProfessionalForDisplay(): Promise<string | null> {
+  try {
+    const profissional = await settingsService.getConfiguredProfessional();
+    return typeof profissional === "string" && profissional.trim().length > 0
+      ? profissional.trim()
+      : null;
+  } catch {
+    return null;
   }
 }

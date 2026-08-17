@@ -65,6 +65,12 @@ describe("AppointmentCard — confirmação administrativa", () => {
     const agendamento = buildDTO();
     const confirmAction = vi.fn(async () => actionOk(agendamento));
     const cancelAction = vi.fn(async () => actionOk(agendamento));
+    const popup = {
+      opener: window,
+      location: { href: "" },
+      close: vi.fn(),
+    };
+    vi.mocked(window.open).mockReturnValue(popup as unknown as Window);
 
     render(
       <AppointmentCard
@@ -96,6 +102,9 @@ describe("AppointmentCard — confirmação administrativa", () => {
     await waitFor(() => expect(confirmAction).toHaveBeenCalledTimes(1));
     expect(confirmAction).toHaveBeenCalledWith("agd-1");
     expect(cancelAction).not.toHaveBeenCalled();
+    expect(window.open).toHaveBeenCalledWith("", "_blank");
+    expect(popup.opener).toBeNull();
+    expect(popup.location.href).toMatch(/^https:\/\/wa\.me\/5511988887777\?text=/);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
@@ -189,6 +198,12 @@ describe("AppointmentCard — confirmação administrativa", () => {
 describe("AppointmentCard — carregamento local durante a ação", () => {
   it("troca confirmações e ações por um skeleton anunciado enquanto a action está em voo", async () => {
     const agendamento = buildDTO({ adminConfirmadoEm: ADMIN_CONFIRMOU_EM });
+    const popup = {
+      opener: window as Window | null,
+      location: { href: "" },
+      close: vi.fn(),
+    };
+    vi.mocked(window.open).mockReturnValue(popup as unknown as Window);
 
     // A action fica pendurada de propósito: é o intervalo em que o card está
     // "atualizando após ação" (`design.md` §5).
@@ -237,6 +252,10 @@ describe("AppointmentCard — carregamento local durante a ação", () => {
     expect(
       screen.getByRole("button", { name: agendamentoTexts.cancelarAcao }),
     ).toBeInTheDocument();
+    expect(window.open).toHaveBeenCalledWith("", "_blank");
+    expect(popup.opener).toBeNull();
+    expect(popup.location.href).toMatch(/^https:\/\/wa\.me\/5511988887777\?text=/);
+    expect(decodeURIComponent(popup.location.href)).toContain("foi cancelado.");
   });
 });
 

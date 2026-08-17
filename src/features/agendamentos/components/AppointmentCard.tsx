@@ -10,7 +10,10 @@ import {
   type AppointmentDTO,
   type AppointmentStatus,
 } from "@/src/features/agendamentos/types";
-import { type CustomerMessageAction } from "@/src/features/whatsapp/whatsappService";
+import {
+  buildWhatsAppUrl,
+  type CustomerMessageAction,
+} from "@/src/features/whatsapp/whatsappService";
 import { Button } from "@/src/shared/components/Button";
 import { Skeleton } from "@/src/shared/components/Skeleton";
 import { agendamentoTexts, feedbackTexts } from "@/src/shared/constants/texts";
@@ -115,6 +118,13 @@ export function AppointmentCard({
     }
 
     const acao = dialogo;
+    // Reserva a aba ainda dentro do gesto do usuário. Se esperássemos a Server
+    // Action terminar para chamar `window.open`, navegadores poderiam bloquear
+    // a conversa como popup. A URL só é atribuída depois da persistência.
+    const whatsappWindow = window.open("", "_blank") ?? null;
+    if (whatsappWindow !== null) {
+      whatsappWindow.opener = null;
+    }
     setPendente(true);
     setErro(null);
 
@@ -125,16 +135,31 @@ export function AppointmentCard({
           : await cancelAction(agendamento.id);
 
       if (resultado.ok) {
+        const atualizado = resultado.data ?? agendamento;
+
+        try {
+          const whatsappUrl = buildWhatsAppUrl(atualizado, acao);
+          if (whatsappWindow !== null) {
+            whatsappWindow.location.href = whatsappUrl;
+          } else {
+            window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+          }
+        } catch {
+          whatsappWindow?.close();
+        }
+
         setDialogo(null);
-        onActionSuccess?.(resultado.data ?? agendamento, acao);
+        onActionSuccess?.(atualizado, acao);
         return;
       }
 
+      whatsappWindow?.close();
       setErro({ code: resultado.code, message: resultado.message });
     } catch {
       // A Server Action pode nem chegar a devolver `ActionResult` (rede caiu,
       // sessão expirou e o POST foi redirecionado). O detalhe já está no log do
       // servidor; aqui resta a mensagem recuperável do design.
+      whatsappWindow?.close();
       setErro({ code: "unavailable", message: DIALOG_CONTENT[acao].falha });
     } finally {
       setPendente(false);

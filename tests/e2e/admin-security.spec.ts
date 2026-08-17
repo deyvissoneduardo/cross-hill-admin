@@ -45,7 +45,7 @@ import { ADMIN_SESSION_COOKIE } from "../../src/features/admin/sessionCookie";
  * herda cookie de outro (inclusive o do cookie forjado).
  */
 
-const LOGIN_PATH = "/admin/login";
+const LOGIN_PATH = "/";
 /** Cabeçalhos de um despacho de Server Action do App Router. */
 const SERVER_ACTION_HEADERS = {
   "Next-Action": "mutacao-administrativa",

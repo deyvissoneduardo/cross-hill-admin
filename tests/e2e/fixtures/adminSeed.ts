@@ -248,14 +248,14 @@ async function ensureAdminAccount(): Promise<void> {
 }
 
 /**
- * Autentica pelo formulário real de `/admin/login`.
+ * Autentica pelo formulário real da página inicial `/`.
  *
  * Toda a criptografia de sessão acontece do lado do servidor: o teste só digita
  * e-mail e senha. Chegar em `/admin` é a prova de que o cookie emitido foi
  * aceito pela verificação autoritativa (`assertAdminSession`).
  */
 async function signInAsAdmin(page: Page): Promise<void> {
-  await page.goto("/admin/login");
+  await page.goto("/");
 
   // Guarda de configuração: o seed só funciona contra o servidor emulado. No
   // servidor do CT-21 (sem emulador) o login falharia com uma mensagem genérica
@@ -269,7 +269,7 @@ async function signInAsAdmin(page: Page): Promise<void> {
   await page.getByLabel("Senha").fill(E2E_EMULATED_SERVER.adminPassword);
   await page.getByRole("button", { name: "Entrar" }).click();
 
-  await page.waitForURL((url) => url.pathname !== "/admin/login", {
+  await page.waitForURL((url) => url.pathname !== "/", {
     timeout: 20_000,
   });
 

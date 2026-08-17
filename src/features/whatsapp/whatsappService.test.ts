@@ -100,7 +100,7 @@ describe("buildWhatsAppUrl", () => {
     const url = buildWhatsAppUrl(AGENDAMENTO_VALIDO, "confirmacao");
 
     expect(url).toBe(
-      `https://wa.me/11987654321?text=${encodeURIComponent(MENSAGEM_CONFIRMACAO)}`,
+      `https://wa.me/5511987654321?text=${encodeURIComponent(MENSAGEM_CONFIRMACAO)}`,
     );
   });
 

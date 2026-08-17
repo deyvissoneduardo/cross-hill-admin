@@ -219,7 +219,7 @@ describe("assertAdminSession — guarda autoritativa", () => {
     await expect(assertAdminSession()).rejects.toThrow(mocks.RedirectSignal);
 
     expect(mocks.redirect).toHaveBeenCalledTimes(1);
-    expect(mocks.redirect).toHaveBeenCalledWith("/admin/login?erro=sessao");
+    expect(mocks.redirect).toHaveBeenCalledWith("/?erro=sessao");
   });
 
   it("devolve a sessão do administrador sem redirecionar", async () => {
@@ -236,7 +236,7 @@ describe("assertAdminSession — guarda autoritativa", () => {
   it("redireciona sem código de erro quando não há cookie de sessão", async () => {
     await expect(assertAdminSession()).rejects.toThrow(mocks.RedirectSignal);
 
-    expect(mocks.redirect).toHaveBeenCalledWith("/admin/login");
+    expect(mocks.redirect).toHaveBeenCalledWith("/");
   });
 
   it("distingue indisponibilidade de infraestrutura de cookie inválido", async () => {
@@ -248,7 +248,7 @@ describe("assertAdminSession — guarda autoritativa", () => {
 
     await expect(assertAdminSession()).rejects.toThrow(mocks.RedirectSignal);
 
-    expect(mocks.redirect).toHaveBeenCalledWith("/admin/login?erro=indisponivel");
+    expect(mocks.redirect).toHaveBeenCalledWith("/?erro=indisponivel");
   });
 
   it("redireciona com `erro=sessao` quando o cookie é recusado pela verificação", async () => {
@@ -261,7 +261,7 @@ describe("assertAdminSession — guarda autoritativa", () => {
 
     await expect(assertAdminSession()).rejects.toThrow(mocks.RedirectSignal);
 
-    expect(mocks.redirect).toHaveBeenCalledWith("/admin/login?erro=sessao");
+    expect(mocks.redirect).toHaveBeenCalledWith("/?erro=sessao");
   });
 });
 
@@ -273,7 +273,7 @@ describe("adminAction — guarda estrutural das Server Actions administrativas",
     await expect(acao("agendamento-1")).rejects.toThrow(mocks.RedirectSignal);
 
     expect(handler).not.toHaveBeenCalled();
-    expect(mocks.redirect).toHaveBeenCalledWith("/admin/login");
+    expect(mocks.redirect).toHaveBeenCalledWith("/");
   });
 
   it("não executa o handler quando a sessão verificada não é a do administrador", async () => {
@@ -286,7 +286,7 @@ describe("adminAction — guarda estrutural das Server Actions administrativas",
     );
 
     expect(handler).not.toHaveBeenCalled();
-    expect(mocks.redirect).toHaveBeenCalledWith("/admin/login?erro=sessao");
+    expect(mocks.redirect).toHaveBeenCalledWith("/?erro=sessao");
   });
 
   it("executa o handler com a sessão do administrador e devolve o resultado", async () => {
@@ -335,7 +335,7 @@ describe("signInAdmin — autorização antes da rede", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(mocks.createSessionCookie).not.toHaveBeenCalled();
     expect(mocks.cookieStore.set).not.toHaveBeenCalled();
-    expect(mocks.redirect).toHaveBeenCalledWith("/admin/login?erro=credenciais");
+    expect(mocks.redirect).toHaveBeenCalledWith("/?erro=credenciais");
     expect(consoleWarn).toHaveBeenCalledWith("[admin-auth] login recusado", {
       motivo: "nao_autorizado",
     });

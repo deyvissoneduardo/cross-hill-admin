@@ -67,9 +67,16 @@ export function buildWhatsAppUrl(
     agendamento.telefone,
     "telefone",
     dominioTexts.telefoneInvalido,
-  );
+  ).replace(/\D/g, "");
 
-  return `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+  // `wa.me` exige o código do país. Documentos antigos já podem trazê-lo;
+  // números brasileiros no formato interno (DDD + número) recebem `55` aqui.
+  const telefoneInternacional =
+    telefone.startsWith("55") && (telefone.length === 12 || telefone.length === 13)
+      ? telefone
+      : `55${telefone}`;
+
+  return `https://wa.me/${telefoneInternacional}?text=${encodeURIComponent(mensagem)}`;
 }
 
 /** Campo obrigatório: string não vazia após remover espaço nas pontas. */

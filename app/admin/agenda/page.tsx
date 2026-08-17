@@ -6,13 +6,13 @@ import { saveAvailability } from "@/src/features/admin/actions";
 import { assertAdminSession } from "@/src/features/admin/auth";
 import { AdminShell } from "@/src/features/admin/components/AdminShell";
 import { FeedbackBanner } from "@/src/features/admin/components/FeedbackBanner";
+import { DateSelectorForm } from "@/src/features/agenda/components/DateSelectorForm";
 import { ScheduleSlotGrid } from "@/src/features/agenda/components/ScheduleSlotGrid";
 import { SingleProfessionalSummary } from "@/src/features/agenda/components/SingleProfessionalSummary";
 import { availabilityService } from "@/src/features/agenda/services/availabilityService";
 import { readConfiguredProfessionalName } from "@/src/features/agenda/services/professionalSummary";
 import { type AvailabilitySlotDTO } from "@/src/features/agenda/types";
 import { Button } from "@/src/shared/components/Button";
-import { Field } from "@/src/shared/components/Field";
 import { Skeleton } from "@/src/shared/components/Skeleton";
 import { agendaTexts, feedbackTexts } from "@/src/shared/constants/texts";
 import { isIsoDate, todayIsoDate } from "@/src/shared/time";
@@ -69,27 +69,6 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
 /** `?data=` inválido ou ausente cai no dia de hoje da operação (`-03:00`). */
 function resolveSelectedDate(data: string | string[] | undefined): string {
   return typeof data === "string" && isIsoDate(data) ? data : todayIsoDate();
-}
-
-/** Formulário de navegação por data — GET puro, funciona sem JavaScript. */
-function DateSelectorForm({ isoDate }: { isoDate: string }) {
-  return (
-    <Form
-      action="/admin/agenda"
-      className="flex flex-col gap-3 rounded-lg border border-(--color-border) bg-(--color-surface-2) p-4"
-    >
-      <Field
-        id="agenda-data"
-        name="data"
-        type="date"
-        label={agendaTexts.seletorDataLabel}
-        defaultValue={isoDate}
-      />
-      <Button type="submit" variant="secondary">
-        {agendaTexts.seletorDataAcao}
-      </Button>
-    </Form>
-  );
 }
 
 /**

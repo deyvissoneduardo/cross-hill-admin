@@ -93,6 +93,30 @@ describe("bookingService + availabilityService (Firestore Emulator)", () => {
     ]);
   });
 
+  it("lista documento no schema implantado com telefone E.164 brasileiro", async () => {
+    await getFirestoreAdmin().doc(firestorePaths.agendamento("ag-schema-real")).set({
+      nomeCliente: "Cliente Firestore",
+      telefoneExibicao: "(11) 99999-8888",
+      telefoneNormalizado: "5511999998888",
+      profissionalId: "profissional-001",
+      data: DATA_FUTURA,
+      horario: "09:00",
+      status: "AGUARDANDO_CONFIRMACAO",
+      criadoEm: new Date("2026-08-17T12:00:00.000Z"),
+    });
+
+    const ativos = await bookingService.listActiveAppointments();
+
+    expect(ativos).toHaveLength(1);
+    expect(ativos[0]).toMatchObject({
+      id: "ag-schema-real",
+      cliente: "Cliente Firestore",
+      telefone: "11999998888",
+      profissional: PROFISSIONAL,
+      status: "aguardando_agendamento",
+    });
+  });
+
   it("cancelarAgendamento remove da listagem ativa e torna slot disponivel", async () => {
     await seedAppointment({ id: "ag-cancel-001", horario: "09:00" });
     await seedDay(DATA_FUTURA, {

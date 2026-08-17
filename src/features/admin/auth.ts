@@ -183,7 +183,7 @@ export function adminAction<Args extends unknown[], Result>(
 /**
  * Server Action do formulário de login.
  *
- * Sempre redireciona: `/admin` no sucesso, `/admin/login?erro=...` na falha —
+ * Sempre redireciona: `/admin` no sucesso, `/?erro=...` na falha —
  * com código genérico, para não revelar se o e-mail existe. Essa garantia
  * cobre o corpo da resposta e o destino do redirect (sempre genéricos); ela
  * NÃO cobre o tempo de resposta — o curto-circuito de autorização por e-mail
@@ -230,7 +230,7 @@ export async function signInAdmin(formData: FormData): Promise<void> {
 
     destino = "/admin";
   } catch (error) {
-    destino = `/admin/login?erro=${resolveLoginErrorCode(error)}`;
+    destino = `/?erro=${resolveLoginErrorCode(error)}`;
   }
 
   // `redirect` lança exceção de controle de fluxo: precisa ficar FORA do
@@ -263,7 +263,7 @@ export async function signOutAdmin(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(ADMIN_SESSION_COOKIE);
 
-  redirect("/admin/login");
+  redirect("/");
 }
 
 /**
@@ -337,11 +337,11 @@ function buildSignInUrl(apiKey: string): string {
 function loginPathParaRecusa(motivo: SessionRejection): string {
   switch (motivo) {
     case "sem_cookie":
-      return "/admin/login";
+      return "/";
     case "indisponivel":
-      return "/admin/login?erro=indisponivel";
+      return "/?erro=indisponivel";
     default:
-      return "/admin/login?erro=sessao";
+      return "/?erro=sessao";
   }
 }
 
