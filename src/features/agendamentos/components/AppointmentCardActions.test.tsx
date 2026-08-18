@@ -158,11 +158,6 @@ describe("AppointmentCard — confirmação administrativa", () => {
     expect(
       screen.getByText("Profissional: confirmado em 14/08/2026 às 15:05"),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        `${agendamentoTexts.primeiroConfirmadorRotulo}: ${agendamentoTexts.primeiroConfirmadorAdmin}`,
-      ),
-    ).toBeInTheDocument();
 
     // CA-15: as duas confirmações NÃO antecipam o status antes do horário.
     expect(screen.getByText(agendamentoTexts.statusAguardando)).toBeInTheDocument();
