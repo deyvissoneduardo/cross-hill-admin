@@ -16,6 +16,8 @@ import { Button } from "@/src/shared/components/Button";
 import { Skeleton } from "@/src/shared/components/Skeleton";
 import { agendaTexts, feedbackTexts } from "@/src/shared/constants/texts";
 import { isIsoDate, todayIsoDate } from "@/src/shared/time";
+import { googleCalendarService } from "@/src/features/google-calendar/googleCalendarService";
+import { GoogleCalendarLink } from "@/src/features/google-calendar/components/GoogleCalendarLink";
 
 /**
  * Agenda e Disponibilidade (`design.md` §4.3): controle manual de datas e
@@ -45,9 +47,23 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
 
   const params = await searchParams;
   const isoDate = resolveSelectedDate(params.data);
+  const googleCalendarConnected = await readGoogleCalendarConnection();
 
   return (
-    <AdminShell title={agendaTexts.tituloPagina}>
+    <AdminShell
+      title={agendaTexts.tituloPagina}
+      actions={<GoogleCalendarLink connected={googleCalendarConnected} />}
+    >
+      {params.googleCalendar === "vinculado" ? (
+        <div className="mb-4">
+          <FeedbackBanner message="Google Calendar vinculado e agendamentos sincronizados." />
+        </div>
+      ) : typeof params.googleCalendar === "string" &&
+        params.googleCalendar.startsWith("erro") ? (
+        <div className="mb-4">
+          <FeedbackBanner message="Não foi possível vincular o Google Calendar. Tente novamente." />
+        </div>
+      ) : null}
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
         <div className="flex w-full flex-col gap-4 md:w-72 md:shrink-0">
           <DateSelectorForm isoDate={isoDate} />
@@ -64,6 +80,14 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
       </div>
     </AdminShell>
   );
+}
+
+async function readGoogleCalendarConnection(): Promise<boolean> {
+  try {
+    return await googleCalendarService.isConnected();
+  } catch {
+    return false;
+  }
 }
 
 /** `?data=` inválido ou ausente cai no dia de hoje da operação (`-03:00`). */

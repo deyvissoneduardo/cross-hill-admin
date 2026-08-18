@@ -14,13 +14,15 @@ import type { ComponentProps, ReactNode } from "react";
 type FieldProps = Omit<ComponentProps<"input">, "className" | "id"> & {
   id: string;
   label: ReactNode;
+  /** Ação ou ícone exibido no fim do controle. */
+  suffixIcon?: ReactNode;
   /** Mensagem de erro do campo; quando presente marca o controle inválido. */
   error?: string;
   /** Texto auxiliar exibido abaixo do controle quando não há erro. */
   hint?: string;
 };
 
-export function Field({ id, label, error, hint, ...inputProps }: FieldProps) {
+export function Field({ id, label, suffixIcon, error, hint, ...inputProps }: FieldProps) {
   const errorId = `${id}-erro`;
   const hintId = `${id}-ajuda`;
   const describedBy = error ? errorId : hint ? hintId : undefined;
@@ -31,18 +33,24 @@ export function Field({ id, label, error, hint, ...inputProps }: FieldProps) {
         {label}
       </label>
 
-      <input
-        {...inputProps}
-        id={id}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-        className={
-          "min-h-11 rounded-lg border bg-(--color-surface-2) px-3 text-sm text-(--color-foreground) " +
-          "placeholder:text-(--color-muted) " +
-          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-focus-ring) " +
-          (error ? "border-(--color-danger)" : "border-(--color-border)")
-        }
-      />
+      <div className="relative">
+        <input
+          {...inputProps}
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          className={
+            "min-h-11 w-full rounded-lg border bg-(--color-surface-2) px-3 text-sm text-(--color-foreground) " +
+            "placeholder:text-(--color-muted) " +
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-focus-ring) " +
+            (suffixIcon ? "pr-11 " : "") +
+            (error ? "border-(--color-danger)" : "border-(--color-border)")
+          }
+        />
+        {suffixIcon ? (
+          <span className="absolute inset-y-0 right-0 flex items-center pr-1">{suffixIcon}</span>
+        ) : null}
+      </div>
 
       {error ? (
         <p id={errorId} className="text-sm text-(--color-danger)">

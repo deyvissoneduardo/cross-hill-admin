@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { getAdminSession, signInAdmin } from "@/src/features/admin/auth";
 import { FeedbackBanner } from "@/src/features/admin/components/FeedbackBanner";
+import { PasswordField } from "@/src/features/admin/components/PasswordField";
 import { Button } from "@/src/shared/components/Button";
 import { Field } from "@/src/shared/components/Field";
 import { adminTexts } from "@/src/shared/constants/texts";
@@ -49,13 +50,10 @@ export default async function AdminLoginPage({ searchParams }: PageProps<"/">) {
             autoComplete="email"
             required
           />
-          <Field
+          <PasswordField
             id="admin-senha"
             name="senha"
-            type="password"
             label={adminTexts.loginSenhaLabel}
-            autoComplete="current-password"
-            required
           />
 
           <Button type="submit" fullWidth pendingLabel={adminTexts.loginEnviando}>

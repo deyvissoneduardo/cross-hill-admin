@@ -38,6 +38,9 @@ Abra [http://localhost:3000](http://localhost:3000) — a vitrine pública fica 
 
 ## Configuração
 
+Para ativar a sincronização de agendamentos, consulte o
+[passo a passo do Google Calendar](docs/google-calendar-setup.md).
+
 Variáveis de ambiente (`.env.local`, nunca commitado — ver `.env.example`):
 
 | Variável | Descrição |

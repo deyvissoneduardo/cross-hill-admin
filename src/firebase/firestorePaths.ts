@@ -18,6 +18,7 @@ const CONFIG_DOCS = {
   aparencia: "aparencia",
   posAgendamento: "pos-agendamento",
   profissional: "profissional",
+  googleCalendar: "google-calendar",
 } as const;
 
 export const firestorePaths = {
@@ -44,6 +45,9 @@ export const firestorePaths = {
   /** Documento do profissional único da v1. */
   configuracaoProfissional: () =>
     `${COLLECTIONS.configuracoes}/${CONFIG_DOCS.profissional}`,
+  /** Credenciais criptografadas e metadados da integração Google Calendar. */
+  configuracaoGoogleCalendar: () =>
+    `${COLLECTIONS.configuracoes}/${CONFIG_DOCS.googleCalendar}`,
 } as const;
 
 /**

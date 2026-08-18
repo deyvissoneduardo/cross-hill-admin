@@ -9,6 +9,7 @@ import { appointmentValidators } from "@/src/features/agendamentos/validators/ap
 import { settingsService } from "@/src/features/configuracoes/services/settingsService";
 import { dominioTexts } from "@/src/shared/constants/texts";
 import { AppError, withDomainErrors } from "@/src/shared/errors";
+import { syncAppointmentBestEffort } from "@/src/features/google-calendar/googleCalendarService";
 
 /**
  * Regras de agendamento: listagem ativa, confirmação administrativa,
@@ -89,8 +90,14 @@ export async function confirmAdminAppointment(
   const id = appointmentValidators.assertAppointmentId(agendamentoId);
 
   return withDomainErrors(ESCOPO, "confirmacao", async () => {
-    const confirmado = await appointmentRepository.confirmAdmin(id, now);
-    return applyProfessionalForDisplay(confirmado);
+    const confirmado = await applyProfessionalForDisplay(
+      await appointmentRepository.confirmAdmin(id, now),
+    );
+    // A confirmação administrativa deve aparecer imediatamente como confirmada
+    // no calendário externo, ainda que o status histórico da UI só seja derivado
+    // como final em outra etapa do domínio.
+    await syncAppointmentBestEffort({ ...confirmado, status: "confirmado" });
+    return confirmado;
   });
 }
 
@@ -107,8 +114,11 @@ export async function cancelAppointment(
   const id = appointmentValidators.assertAppointmentId(agendamentoId);
 
   return withDomainErrors(ESCOPO, "cancelamento", async () => {
-    const cancelado = await appointmentRepository.cancelReleasingSlot(id, now);
-    return applyProfessionalForDisplay(cancelado);
+    const cancelado = await applyProfessionalForDisplay(
+      await appointmentRepository.cancelReleasingSlot(id, now),
+    );
+    await syncAppointmentBestEffort(cancelado);
+    return cancelado;
   });
 }
 
@@ -140,9 +150,11 @@ export async function requestAppointmentAtomically(
     horario: appointmentValidators.assertTimeOfDay(input.horario),
   };
 
-  return withDomainErrors(ESCOPO, "reserva", () =>
-    appointmentRepository.createOccupyingSlot(normalizado, now),
-  );
+  return withDomainErrors(ESCOPO, "reserva", async () => {
+    const appointment = await appointmentRepository.createOccupyingSlot(normalizado, now);
+    await syncAppointmentBestEffort(appointment);
+    return appointment;
+  });
 }
 
 export const bookingService = {
