@@ -24,7 +24,9 @@ const CONTENT_ID = "conteudo-admin";
 const NAV_ITEMS = [
   { href: "/admin", label: adminTexts.navDashboard },
   { href: "/admin/agenda", label: adminTexts.navAgenda },
+  /* TODO: a opção de Aparência ainda será implementada no menu.
   { href: "/admin/configuracoes/aparencia", label: adminTexts.navAparencia },
+  */
   { href: "/admin/configuracoes/agendamento", label: adminTexts.navPosAgendamento },
 ] as const;
 

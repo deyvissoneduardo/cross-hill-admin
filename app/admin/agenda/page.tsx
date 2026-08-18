@@ -16,8 +16,10 @@ import { Button } from "@/src/shared/components/Button";
 import { Skeleton } from "@/src/shared/components/Skeleton";
 import { agendaTexts, feedbackTexts } from "@/src/shared/constants/texts";
 import { isIsoDate, todayIsoDate } from "@/src/shared/time";
+/* TODO: o botão de vínculo com o Google Calendar ainda será implementado.
 import { googleCalendarService } from "@/src/features/google-calendar/googleCalendarService";
 import { GoogleCalendarLink } from "@/src/features/google-calendar/components/GoogleCalendarLink";
+*/
 
 /**
  * Agenda e Disponibilidade (`design.md` §4.3): controle manual de datas e
@@ -47,12 +49,16 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
 
   const params = await searchParams;
   const isoDate = resolveSelectedDate(params.data);
+  /* TODO: o botão de vínculo com o Google Calendar ainda será implementado.
   const googleCalendarConnected = await readGoogleCalendarConnection();
+  */
 
   return (
     <AdminShell
       title={agendaTexts.tituloPagina}
+      /* TODO: o botão de vínculo com o Google Calendar ainda será implementado.
       actions={<GoogleCalendarLink connected={googleCalendarConnected} />}
+      */
     >
       {params.googleCalendar === "vinculado" ? (
         <div className="mb-4">
@@ -82,6 +88,7 @@ export default async function AgendaPage({ searchParams }: AgendaPageProps) {
   );
 }
 
+/* TODO: o botão de vínculo com o Google Calendar ainda será implementado.
 async function readGoogleCalendarConnection(): Promise<boolean> {
   try {
     return await googleCalendarService.isConnected();
@@ -89,6 +96,7 @@ async function readGoogleCalendarConnection(): Promise<boolean> {
     return false;
   }
 }
+*/
 
 /** `?data=` inválido ou ausente cai no dia de hoje da operação (`-03:00`). */
 function resolveSelectedDate(data: string | string[] | undefined): string {
