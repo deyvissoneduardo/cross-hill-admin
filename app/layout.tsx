@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { appTexts } from "@/src/shared/constants/texts";
+import { PwaInstallPrompt } from "@/src/shared/components/PwaInstallPrompt";
+import { PwaServiceWorker } from "@/src/shared/components/PwaServiceWorker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,6 +22,20 @@ export const metadata: Metadata = {
     template: `%s · ${appTexts.nomeProduto}`,
   },
   description: appTexts.descricaoProduto,
+  manifest: "/manifest.webmanifest",
+  applicationName: `${appTexts.nomeProduto} Admin`,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: appTexts.nomeProduto,
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+export const viewport = {
+  themeColor: "#09090b",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -30,6 +46,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col bg-(--color-background) text-(--color-foreground)">
         {children}
+        <PwaInstallPrompt />
+        <PwaServiceWorker />
       </body>
     </html>
   );
