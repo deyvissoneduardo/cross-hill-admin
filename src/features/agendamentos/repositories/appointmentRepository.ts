@@ -50,15 +50,17 @@ const FIRESTORE_STATUS_CANCELADO = "CANCELADO";
  * (`status`) e o `limit` recortaria por status/id, cegamente à cronologia. Com
  * igualdade (`in`), a query ordena por `data`/`horario` e o corte é cronológico.
  */
-const STATUS_ATIVOS: readonly AppointmentStatus[] = [
+const STATUS_LISTADOS: readonly AppointmentStatus[] = [
   STATUS_AGUARDANDO,
   STATUS_CONFIRMADO,
+  STATUS_CANCELADO,
 ] as const;
 
-const FIRESTORE_STATUS_ATIVOS = [
-  ...STATUS_ATIVOS,
+const FIRESTORE_STATUS_LISTADOS = [
+  ...STATUS_LISTADOS,
   FIRESTORE_STATUS_AGUARDANDO,
   FIRESTORE_STATUS_CONFIRMADO,
+  FIRESTORE_STATUS_CANCELADO,
 ] as const;
 
 /**
@@ -83,12 +85,11 @@ export type NewAppointmentInput = {
 
 export const appointmentRepository = {
   /**
-   * Agendamentos que ainda exigem acompanhamento (PRD RN-01/RN-02).
+   * Agendamentos do painel, inclusive os cancelados para preservar o histórico.
    *
-   * O filtro por status vive na query — é o que garante que cancelado não volta
-   * para a listagem principal nem por engano da UI. Como o projeto implantado
-   * ainda não possui o índice composto, a ordenação cronológica ocorre depois
-   * do filtro retornado pelo Firestore e antes da aplicação do teto.
+   * A query aceita os status dos dois schemas persistidos. Como o projeto
+   * implantado ainda não possui o índice composto, a ordenação cronológica
+   * ocorre depois do filtro retornado pelo Firestore e antes do teto.
    *
    * Documento corrompido é descartado com log, não propagado: aqui um único
    * documento inválido derrubaria a listagem inteira do administrador (mesma
@@ -99,7 +100,7 @@ export const appointmentRepository = {
   async listActive(now: Date): Promise<AppointmentDTO[]> {
     const snapshot = await getFirestoreAdmin()
       .collection(firestorePaths.agendamentos())
-      .where("status", "in", FIRESTORE_STATUS_ATIVOS)
+      .where("status", "in", FIRESTORE_STATUS_LISTADOS)
       .get();
 
     // O projeto Firebase ainda não possui o índice composto status/data/horário.
@@ -120,7 +121,6 @@ export const appointmentRepository = {
     if (snapshot.size > MAX_AGENDAMENTOS_ATIVOS) {
       console.warn("[agendamentos] listagem truncada", {
         limite: MAX_AGENDAMENTOS_ATIVOS,
-        // A consulta já exclui cancelados; o excedente conta somente ativos.
         foraDaListagemAoMenos: snapshot.size - MAX_AGENDAMENTOS_ATIVOS,
       });
     }

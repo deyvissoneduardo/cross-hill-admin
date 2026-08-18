@@ -25,32 +25,6 @@ const PARTY_LABEL: Record<ConfirmerParty, string> = {
   profissional: agendamentoTexts.primeiroConfirmadorProfissional,
 };
 
-export function ConfirmationTimeline({
-  adminConfirmadoEm,
-  profissionalConfirmadoEm,
-  confirmadoPrimeiroPor,
-}: ConfirmationTimelineProps) {
-  // O profissional vem primeiro, na ordem do card em `design.md` §4.2.
-  const linhas = [
-  ] as const;
-
-  return (
-    <div className="flex flex-col gap-1">
-      <h4 className="sr-only">{agendamentoTexts.confirmacoesTitulo}</h4>
-
-      <ul className="flex flex-col gap-1">
-       
-      </ul>
-
-      {confirmadoPrimeiroPor === null ? null : (
-        <p className="text-xs text-(--color-muted)">
-          {`${agendamentoTexts.primeiroConfirmadorRotulo}: ${PARTY_LABEL[confirmadoPrimeiroPor]}`}
-        </p>
-      )}
-    </div>
-  );
-}
-
 /** `"confirmado em 14/08/2026 às 14:32"`, `"confirmado"` ou `"pendente"`. */
 function describeConfirmation(confirmadoEm: string | null): string {
   if (confirmadoEm === null) {

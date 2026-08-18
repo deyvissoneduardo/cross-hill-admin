@@ -5,7 +5,6 @@ import { useCallback, useState } from "react";
 import { ConfirmationDialog } from "@/src/features/admin/components/ConfirmationDialog";
 import { FeedbackBanner } from "@/src/features/admin/components/FeedbackBanner";
 import { APPOINTMENT_CARD_FRAME_CLASS } from "@/src/features/agendamentos/components/appointmentListLayout";
-import { ConfirmationTimeline } from "@/src/features/agendamentos/components/ConfirmationTimeline";
 import { EditAppointmentDialog } from "@/src/features/agendamentos/components/EditAppointmentDialog";
 import { type AvailabilitySlotDTO } from "@/src/features/agenda/types";
 import {
@@ -63,6 +62,7 @@ type AppointmentCardProps = {
    */
   onActionSuccess?: (agendamento: AppointmentDTO, acao: CustomerMessageAction) => void;
   onEditSuccess?: (agendamento: AppointmentDTO) => void;
+  whatsappUrl?: string | null;
 };
 
 const STATUS_LABEL: Record<AppointmentStatus, string> = {
@@ -103,6 +103,7 @@ export function AppointmentCard({
   rescheduleAction,
   onActionSuccess,
   onEditSuccess,
+  whatsappUrl = null,
 }: AppointmentCardProps) {
   const [dialogo, setDialogo] = useState<CustomerMessageAction | null>(null);
   const [editando, setEditando] = useState(false);
@@ -114,6 +115,7 @@ export function AppointmentCard({
   const podeConfirmar =
     agendamento.status === "aguardando_agendamento" &&
     agendamento.adminConfirmadoEm === null;
+  const cancelado = agendamento.status === "cancelado";
 
   const abrirDialogo = useCallback((acao: CustomerMessageAction) => {
     setErro(null);
@@ -236,33 +238,47 @@ export function AppointmentCard({
         <UpdatingSkeleton />
       ) : (
         <>
-          <ConfirmationTimeline
-            adminConfirmadoEm={agendamento.adminConfirmadoEm}
-            profissionalConfirmadoEm={agendamento.profissionalConfirmadoEm}
-            confirmadoPrimeiroPor={agendamento.confirmadoPrimeiroPor}
-          />
-
           <footer className="mt-auto flex flex-col gap-3 pt-1">
             {erro !== null && dialogo === null ? (
               <FeedbackBanner message={erro.message} />
             ) : null}
 
             <div className="flex flex-wrap gap-2">
-              {listAvailableAction && rescheduleAction ? (
+              {!cancelado && listAvailableAction && rescheduleAction ? (
                 <Button variant="secondary" onClick={() => setEditando(true)}>
                   {agendamentoTexts.editarAcao}
                 </Button>
               ) : null}
-              <Button
-                onClick={() => abrirDialogo("confirmacao")}
-                disabled={!podeConfirmar}
-              >
-                {agendamentoTexts.confirmarAcao}
-              </Button>
-              <Button variant="destructive" onClick={() => abrirDialogo("cancelamento")}>
-                {agendamentoTexts.cancelarAcao}
-              </Button>
+              {cancelado ? null : (
+                <Button
+                  onClick={() => abrirDialogo("confirmacao")}
+                  disabled={!podeConfirmar}
+                >
+                  {agendamentoTexts.confirmarAcao}
+                </Button>
+              )}
+              {cancelado ? null : (
+                <Button variant="destructive" onClick={() => abrirDialogo("cancelamento")}>
+                  {agendamentoTexts.cancelarAcao}
+                </Button>
+              )}
             </div>
+
+            {whatsappUrl === null ? null : (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={
+                  "inline-flex min-h-11 w-full items-center justify-center rounded-lg border " +
+                  "border-(--color-border) bg-(--color-surface-3) px-4 text-sm font-medium " +
+                  "text-(--color-foreground) focus-visible:outline-2 focus-visible:outline-offset-2 " +
+                  "focus-visible:outline-(--color-focus-ring)"
+                }
+              >
+                {agendamentoTexts.comunicacaoAbrirConversa}
+              </a>
+            )}
           </footer>
         </>
       )}

@@ -16,7 +16,7 @@ import { actionOk } from "@/src/shared/errors";
  * Invariantes:
  * - CT-01: agendamento ativo vira card com cliente, telefone, profissional,
  *   data, horário e status.
- * - CT-02: agendamento cancelado nunca aparece na listagem principal.
+ * - CT-02: agendamento cancelado permanece visível com seu status.
  *
  * O DTO é construído pelo caminho público de produção (`toAppointmentDTO` com
  * `now` injetado), nunca escrito à mão: o status exibido é derivado, e um DTO
@@ -110,7 +110,7 @@ describe("AppointmentList", () => {
     expect(screen.getAllByRole("article")).toHaveLength(2);
   });
 
-  it("CT-02: não renderiza cards com status cancelado", () => {
+  it("CT-02: mantém o card cancelado visível e sem ações de mutação", () => {
     const ativo = toAppointmentDTO(buildAppointment(), AGORA);
     const cancelado = toAppointmentDTO(
       buildAppointment({
@@ -124,10 +124,57 @@ describe("AppointmentList", () => {
 
     renderList([cancelado, ativo]);
 
-    expect(screen.queryByRole("article", { name: "Rita Nunes" })).toBeNull();
-    expect(screen.queryByText(agendamentoTexts.statusCancelado)).toBeNull();
+    const cardCancelado = screen.getByRole("article", { name: "Rita Nunes" });
+    expect(within(cardCancelado).getByText(agendamentoTexts.statusCancelado)).toBeVisible();
+    expect(
+      within(cardCancelado).queryByRole("button", { name: agendamentoTexts.cancelarAcao }),
+    ).toBeNull();
     expect(screen.getByRole("article", { name: "João Pereira" })).toBeInTheDocument();
-    expect(screen.getAllByRole("article")).toHaveLength(1);
+    expect(screen.getAllByRole("article")).toHaveLength(2);
+  });
+
+  it("filtra os cards por dia e pela semana de segunda a domingo", () => {
+    const domingo = toAppointmentDTO(
+      buildAppointment({ id: "domingo", cliente: "Cliente Domingo", data: "2026-08-16" }),
+      AGORA,
+    );
+    const segunda = toAppointmentDTO(
+      buildAppointment({ id: "segunda", cliente: "Cliente Segunda", data: "2026-08-17" }),
+      AGORA,
+    );
+    const sexta = toAppointmentDTO(
+      buildAppointment({ id: "sexta", cliente: "Cliente Sexta", data: "2026-08-21" }),
+      AGORA,
+    );
+    const proximaSegunda = toAppointmentDTO(
+      buildAppointment({
+        id: "proxima-segunda",
+        cliente: "Cliente Próxima Semana",
+        data: "2026-08-24",
+      }),
+      AGORA,
+    );
+
+    renderList([domingo, segunda, sexta, proximaSegunda]);
+
+    fireEvent.change(screen.getByLabelText(agendamentoTexts.filtroPeriodoLabel), {
+      target: { value: "dia" },
+    });
+    fireEvent.change(screen.getByLabelText(agendamentoTexts.filtroDataLabel), {
+      target: { value: "2026-08-21" },
+    });
+    expect(screen.getByRole("article", { name: "Cliente Sexta" })).toBeVisible();
+    expect(screen.queryByRole("article", { name: "Cliente Segunda" })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText(agendamentoTexts.filtroPeriodoLabel), {
+      target: { value: "semana" },
+    });
+    expect(screen.getByRole("article", { name: "Cliente Segunda" })).toBeVisible();
+    expect(screen.getByRole("article", { name: "Cliente Sexta" })).toBeVisible();
+    expect(screen.queryByRole("article", { name: "Cliente Domingo" })).toBeNull();
+    expect(
+      screen.queryByRole("article", { name: "Cliente Próxima Semana" }),
+    ).toBeNull();
   });
 
   it("exibe o estado vazio com a ação de recuperação quando não há ativos", () => {
@@ -150,11 +197,8 @@ describe("AppointmentList", () => {
       />,
     );
 
-    expect(screen.getByText(feedbackTexts.listaVaziaAgendamentos)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: feedbackTexts.acaoAtualizar }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("article")).toBeNull();
+    expect(screen.getByRole("article", { name: "Rita Nunes" })).toBeVisible();
+    expect(screen.queryByText(feedbackTexts.listaVaziaAgendamentos)).toBeNull();
   });
 
   it("disponibiliza a mensagem e a conversa com o cliente após a confirmação", async () => {
@@ -179,21 +223,18 @@ describe("AppointmentList", () => {
       screen.getByRole("button", { name: agendamentoTexts.confirmarDialogAcao }),
     );
 
-    const comunicacao = await screen.findByRole("region", {
-      name: agendamentoTexts.comunicacaoTitulo,
-    });
-
     const mensagem =
       "Olá, João Pereira! Seu agendamento com Ana Souza em 15/08/2026 às 09:00 foi confirmado.";
-    expect(within(comunicacao).getByText(mensagem)).toBeInTheDocument();
-    expect(
-      within(comunicacao).getByRole("link", {
+    const card = screen.getByRole("article", { name: "João Pereira" });
+    const conversa = await within(card).findByRole("link", {
         name: agendamentoTexts.comunicacaoAbrirConversa,
-      }),
-    ).toHaveAttribute(
+      });
+    expect(conversa).toHaveAttribute(
       "href",
       `https://wa.me/5511988887777?text=${encodeURIComponent(mensagem)}`,
     );
+    expect(conversa).toHaveClass("w-full");
+    expect(screen.queryByRole("region", { name: agendamentoTexts.comunicacaoTitulo })).toBeNull();
 
     await waitFor(() =>
       expect(screen.getByText(agendamentoTexts.acaoConcluida)).toBeInTheDocument(),

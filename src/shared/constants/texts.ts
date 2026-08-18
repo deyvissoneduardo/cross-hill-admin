@@ -96,6 +96,12 @@ export const agendamentoTexts = {
   painelTitulo: "Painel de agendamentos",
   resumoAguardando: "Aguardando",
   resumoConfirmados: "Confirmados",
+  filtroPeriodoLabel: "Filtrar agendamentos",
+  filtroTodos: "Todos",
+  filtroDia: "Dia",
+  filtroSemana: "Semana",
+  filtroDataLabel: "Data de referência",
+  filtroSemResultados: "Nenhum agendamento no período selecionado.",
 
   // Status canônico (PRD RN-01/RN-15/RN-16) — badge combina cor E texto (§9).
   statusAguardando: "Aguardando agendamento",
@@ -111,7 +117,6 @@ export const agendamentoTexts = {
   confirmacaoPendente: "pendente",
   confirmacaoRegistrada: "confirmado",
   confirmacaoRegistradaEm: "confirmado em",
-  primeiroConfirmadorRotulo: "Primeiro a confirmar",
   primeiroConfirmadorAdmin: "administrador",
   primeiroConfirmadorProfissional: "profissional",
 

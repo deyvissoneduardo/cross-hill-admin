@@ -69,8 +69,8 @@ export const confirmAppointment = adminAction(
 /**
  * Cancela o agendamento, liberando o horário (PRD CA-05).
  *
- * A saída da listagem ativa vem da revalidação: o service grava o cancelamento e
- * a consulta do dashboard já não devolve cancelados.
+ * A revalidação mantém o card no painel com o novo status e sem ações, enquanto
+ * o service grava o cancelamento e libera o horário.
  */
 export const cancelAppointment = adminAction(
   async (

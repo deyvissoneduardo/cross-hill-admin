@@ -117,7 +117,7 @@ describe("bookingService + availabilityService (Firestore Emulator)", () => {
     });
   });
 
-  it("cancelarAgendamento remove da listagem ativa e torna slot disponivel", async () => {
+  it("cancelarAgendamento mantem o card cancelado e torna slot disponivel", async () => {
     await seedAppointment({ id: "ag-cancel-001", horario: "09:00" });
     await seedDay(DATA_FUTURA, {
       "09:00": { liberado: true, agendamentoId: "ag-cancel-001" },
@@ -128,8 +128,10 @@ describe("bookingService + availabilityService (Firestore Emulator)", () => {
     expect(cancelado.status).toBe("cancelado");
     expect(cancelado.canceladoEm).toMatch(TIMESTAMP_ISO);
 
-    // Sai da listagem principal (CA-05).
-    expect(await bookingService.listActiveAppointments()).toEqual([]);
+    // Permanece no histórico visível do painel com o status cancelado.
+    expect(await bookingService.listActiveAppointments()).toEqual([
+      expect.objectContaining({ id: "ag-cancel-001", status: "cancelado" }),
+    ]);
 
     // E o horário volta para a vitrine pública, solicitável.
     expect(await availabilityService.listBookableSlots(DATA_FUTURA)).toEqual([
@@ -219,7 +221,10 @@ describe("bookingService + availabilityService (Firestore Emulator)", () => {
     });
 
     const ativos = await bookingService.listActiveAppointments();
-    expect(ativos.map((agendamento) => agendamento.id)).toEqual(["ag-controle-002"]);
+    expect(ativos.map((agendamento) => agendamento.id)).toEqual([
+      "ag-cancelado-001",
+      "ag-controle-002",
+    ]);
   });
 
   it("transacaoDeReserva aceita apenas uma solicitacao concorrente por slot", async () => {

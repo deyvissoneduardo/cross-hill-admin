@@ -15,9 +15,11 @@ import {
   buildWhatsAppUrl,
   type CustomerMessageAction,
 } from "@/src/features/whatsapp/whatsappService";
-import { Button } from "@/src/shared/components/Button";
 import { Toast } from "@/src/shared/components/Toast";
 import { agendamentoTexts, feedbackTexts } from "@/src/shared/constants/texts";
+import { isIsoDate, todayIsoDate } from "@/src/shared/time";
+
+type PeriodFilter = "todos" | "dia" | "semana";
 
 /**
  * Listagem operacional do painel (`design.md` §4.2 e §5).
@@ -57,61 +59,76 @@ export function AppointmentList({
   rescheduleAction,
   emptyAction,
 }: AppointmentListProps) {
-  const [comunicacao, setComunicacao] = useState<CustomerCommunication | null>(null);
+  const [comunicacoesDosCards, setComunicacoesDosCards] = useState<
+    Record<string, CustomerCommunication>
+  >({});
   const [toast, setToast] = useState<string | null>(null);
+  const [periodo, setPeriodo] = useState<PeriodFilter>("todos");
+  const [dataReferencia, setDataReferencia] = useState(todayIsoDate);
 
-  // Cancelado nunca entra na listagem principal (PRD CA-02). A query do
-  // repository já filtra; a barreira é repetida aqui porque esta listagem é o
-  // contrato visível — um cancelado que escapasse da consulta não pode reaparecer
-  // na tela do administrador.
-  const ativos = agendamentos.filter(
-    (agendamento) => agendamento.status !== "cancelado",
+  const filtrados = filterAppointmentsByPeriod(
+    agendamentos,
+    periodo,
+    dataReferencia,
   );
 
   const handleActionSuccess = useCallback(
     (agendamento: AppointmentDTO, acao: CustomerMessageAction) => {
       setToast(agendamentoTexts.acaoConcluida);
-      setComunicacao(buildCommunication(agendamento, acao));
+      const novaComunicacao = buildCommunication(agendamento, acao);
+
+      if (novaComunicacao !== null) {
+        setComunicacoesDosCards((atuais) => ({
+          ...atuais,
+          [agendamento.id]: novaComunicacao,
+        }));
+      }
     },
     [],
   );
 
   return (
     <div className="flex flex-col gap-4">
-      {comunicacao === null ? null : (
-        <section
-          aria-label={agendamentoTexts.comunicacaoTitulo}
-          className="flex flex-col gap-3 rounded-lg border border-(--color-border) bg-(--color-surface-2) p-4"
-        >
-          <h2 className="text-sm font-medium text-(--color-foreground)">
-            {agendamentoTexts.comunicacaoTitulo}
-          </h2>
-          <p className="text-sm text-(--color-muted)">{comunicacao.texto}</p>
+      <div className="flex flex-col gap-3 rounded-lg border border-(--color-border) bg-(--color-surface-2) p-4 sm:flex-row sm:items-end">
+        <div className="flex flex-1 flex-col gap-1.5">
+          <label
+            htmlFor="agendamentos-filtro-periodo"
+            className="text-sm font-medium text-(--color-foreground)"
+          >
+            {agendamentoTexts.filtroPeriodoLabel}
+          </label>
+          <select
+            id="agendamentos-filtro-periodo"
+            value={periodo}
+            onChange={(event) => setPeriodo(event.currentTarget.value as PeriodFilter)}
+            className="min-h-11 rounded-lg border border-(--color-border) bg-(--color-surface-2) px-3 text-sm text-(--color-foreground) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-focus-ring)"
+          >
+            <option value="todos">{agendamentoTexts.filtroTodos}</option>
+            <option value="dia">{agendamentoTexts.filtroDia}</option>
+            <option value="semana">{agendamentoTexts.filtroSemana}</option>
+          </select>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {comunicacao.url === null ? null : (
-              <a
-                href={comunicacao.url}
-                target="_blank"
-                // A aba aberta não pode manipular esta janela (`window.opener`).
-                rel="noopener noreferrer"
-                className={
-                  "inline-flex min-h-11 items-center rounded-lg border border-(--color-border) " +
-                  "bg-(--color-surface-3) px-4 text-sm font-medium text-(--color-foreground) " +
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-focus-ring)"
-                }
-              >
-                {agendamentoTexts.comunicacaoAbrirConversa}
-              </a>
-            )}
-            <Button variant="secondary" onClick={() => setComunicacao(null)}>
-              {feedbackTexts.acaoFechar}
-            </Button>
+        {periodo === "todos" ? null : (
+          <div className="flex flex-1 flex-col gap-1.5">
+            <label
+              htmlFor="agendamentos-filtro-data"
+              className="text-sm font-medium text-(--color-foreground)"
+            >
+              {agendamentoTexts.filtroDataLabel}
+            </label>
+            <input
+              id="agendamentos-filtro-data"
+              type="date"
+              value={dataReferencia}
+              onChange={(event) => setDataReferencia(event.currentTarget.value)}
+              className="min-h-11 rounded-lg border border-(--color-border) bg-(--color-surface-2) px-3 text-sm text-(--color-foreground) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-focus-ring)"
+            />
           </div>
-        </section>
-      )}
+        )}
+      </div>
 
-      {ativos.length === 0 ? (
+      {filtrados.length === 0 ? (
         <div
           className={
             "flex flex-col items-center gap-3 rounded-lg border border-(--color-border) " +
@@ -119,13 +136,15 @@ export function AppointmentList({
           }
         >
           <p className="text-sm text-(--color-muted)">
-            {feedbackTexts.listaVaziaAgendamentos}
+            {agendamentos.length === 0
+              ? feedbackTexts.listaVaziaAgendamentos
+              : agendamentoTexts.filtroSemResultados}
           </p>
-          {emptyAction}
+          {agendamentos.length === 0 ? emptyAction : null}
         </div>
       ) : (
         <ul className={APPOINTMENT_GRID_CLASS}>
-          {ativos.map((agendamento) => (
+          {filtrados.map((agendamento) => (
             <li key={agendamento.id} className="flex">
               <AppointmentCard
                 agendamento={agendamento}
@@ -135,6 +154,7 @@ export function AppointmentList({
                 rescheduleAction={rescheduleAction}
                 onActionSuccess={handleActionSuccess}
                 onEditSuccess={() => setToast(agendamentoTexts.acaoConcluida)}
+                whatsappUrl={comunicacoesDosCards[agendamento.id]?.url}
               />
             </li>
           ))}
@@ -146,6 +166,34 @@ export function AppointmentList({
       )}
     </div>
   );
+}
+
+export function filterAppointmentsByPeriod(
+  appointments: readonly AppointmentDTO[],
+  period: PeriodFilter,
+  referenceDate: string,
+): AppointmentDTO[] {
+  if (period === "todos") return [...appointments];
+  if (period === "dia") {
+    return appointments.filter((appointment) => appointment.data === referenceDate);
+  }
+  if (!isIsoDate(referenceDate)) return [];
+
+  const [weekStart, weekEnd] = getIsoWeekBounds(referenceDate);
+  return appointments.filter(
+    (appointment) => appointment.data >= weekStart && appointment.data <= weekEnd,
+  );
+}
+
+/** Retorna segunda e domingo da semana sem depender do fuso do navegador. */
+function getIsoWeekBounds(isoDate: string): [string, string] {
+  const reference = new Date(`${isoDate}T00:00:00.000Z`);
+  const dayFromMonday = (reference.getUTCDay() + 6) % 7;
+  const monday = new Date(reference);
+  monday.setUTCDate(reference.getUTCDate() - dayFromMonday);
+  const sunday = new Date(monday);
+  sunday.setUTCDate(monday.getUTCDate() + 6);
+  return [monday.toISOString().slice(0, 10), sunday.toISOString().slice(0, 10)];
 }
 
 /**

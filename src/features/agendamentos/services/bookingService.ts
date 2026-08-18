@@ -12,7 +12,7 @@ import { AppError, withDomainErrors } from "@/src/shared/errors";
 import { syncAppointmentBestEffort } from "@/src/features/google-calendar/googleCalendarService";
 
 /**
- * Regras de agendamento: listagem ativa, confirmação administrativa,
+ * Regras de agendamento: listagem do painel, confirmação administrativa,
  * cancelamento com liberação de horário e solicitação pública atômica.
  *
  * Contrato da camada:
@@ -56,7 +56,7 @@ export type AppointmentRequestInput = {
   horario: string;
 };
 
-/** Agendamentos em acompanhamento — cancelados nunca entram (PRD RN-02). */
+/** Agendamentos do painel, incluindo cancelados como histórico operacional. */
 export async function listActiveAppointments(
   now: Date = new Date(),
 ): Promise<AppointmentDTO[]> {
