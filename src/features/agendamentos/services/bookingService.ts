@@ -122,6 +122,26 @@ export async function cancelAppointment(
   });
 }
 
+/** Altera data/horário preservando o agendamento e movendo sua ocupação. */
+export async function rescheduleAppointment(
+  agendamentoId: string,
+  data: string,
+  horario: string,
+  now: Date = new Date(),
+): Promise<AppointmentDTO> {
+  const id = appointmentValidators.assertAppointmentId(agendamentoId);
+  const dataValidada = appointmentValidators.assertIsoDate(data);
+  const horarioValidado = appointmentValidators.assertTimeOfDay(horario);
+
+  return withDomainErrors(ESCOPO, "reagendamento", async () => {
+    const reagendado = await applyProfessionalForDisplay(
+      await appointmentRepository.reschedule(id, dataValidada, horarioValidado, now),
+    );
+    await syncAppointmentBestEffort(reagendado);
+    return reagendado;
+  });
+}
+
 /**
  * Cria a solicitação pública ocupando o horário atomicamente (PRD CA-08/CA-09).
  *
@@ -161,6 +181,7 @@ export const bookingService = {
   listActiveAppointments,
   confirmAdminAppointment,
   cancelAppointment,
+  rescheduleAppointment,
   requestAppointmentAtomically,
 } as const;
 

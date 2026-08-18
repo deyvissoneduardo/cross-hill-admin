@@ -4,7 +4,9 @@ import { Suspense } from "react";
 import {
   cancelAppointment,
   confirmAppointment,
+  listAvailableSlots,
   refreshAppointments,
+  rescheduleAppointment,
 } from "@/src/features/admin/actions";
 import { assertAdminSession } from "@/src/features/admin/auth";
 import { AdminShell } from "@/src/features/admin/components/AdminShell";
@@ -105,6 +107,8 @@ async function AppointmentListBoundary({ agendamentos }: BoundaryProps) {
       agendamentos={carregados}
       confirmAction={confirmAppointment}
       cancelAction={cancelAppointment}
+      listAvailableAction={listAvailableSlots}
+      rescheduleAction={rescheduleAppointment}
       emptyAction={<RefreshAction label={feedbackTexts.acaoAtualizar} />}
     />
   );

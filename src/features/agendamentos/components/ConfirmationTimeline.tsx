@@ -32,16 +32,6 @@ export function ConfirmationTimeline({
 }: ConfirmationTimelineProps) {
   // O profissional vem primeiro, na ordem do card em `design.md` §4.2.
   const linhas = [
-    {
-      chave: "profissional",
-      rotulo: agendamentoTexts.confirmacaoProfissional,
-      confirmadoEm: profissionalConfirmadoEm,
-    },
-    {
-      chave: "admin",
-      rotulo: agendamentoTexts.confirmacaoAdministrador,
-      confirmadoEm: adminConfirmadoEm,
-    },
   ] as const;
 
   return (
@@ -49,27 +39,7 @@ export function ConfirmationTimeline({
       <h4 className="sr-only">{agendamentoTexts.confirmacoesTitulo}</h4>
 
       <ul className="flex flex-col gap-1">
-        {linhas.map((linha) => {
-          const confirmada = linha.confirmadoEm !== null;
-
-          return (
-            <li key={linha.chave} className="flex items-center gap-2 text-sm">
-              <span
-                aria-hidden="true"
-                className={`size-2 shrink-0 rounded-full ${
-                  confirmada ? "bg-(--color-success)" : "bg-(--color-warning)"
-                }`}
-              />
-              <span
-                className={
-                  confirmada ? "text-(--color-foreground)" : "text-(--color-warning)"
-                }
-              >
-                {`${linha.rotulo}: ${describeConfirmation(linha.confirmadoEm)}`}
-              </span>
-            </li>
-          );
-        })}
+       
       </ul>
 
       {confirmadoPrimeiroPor === null ? null : (

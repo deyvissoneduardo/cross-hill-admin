@@ -6,6 +6,8 @@ import { ConfirmationDialog } from "@/src/features/admin/components/Confirmation
 import { FeedbackBanner } from "@/src/features/admin/components/FeedbackBanner";
 import { APPOINTMENT_CARD_FRAME_CLASS } from "@/src/features/agendamentos/components/appointmentListLayout";
 import { ConfirmationTimeline } from "@/src/features/agendamentos/components/ConfirmationTimeline";
+import { EditAppointmentDialog } from "@/src/features/agendamentos/components/EditAppointmentDialog";
+import { type AvailabilitySlotDTO } from "@/src/features/agenda/types";
 import {
   type AppointmentDTO,
   type AppointmentStatus,
@@ -39,15 +41,28 @@ export type AppointmentActionFn = (
   agendamentoId: string,
 ) => Promise<ActionResult<AppointmentDTO>>;
 
+export type RescheduleAppointmentActionFn = (
+  agendamentoId: string,
+  data: string,
+  horario: string,
+) => Promise<ActionResult<AppointmentDTO>>;
+
+export type AvailabilityActionFn = (
+  isoDate: string,
+) => Promise<ActionResult<AvailabilitySlotDTO[]>>;
+
 type AppointmentCardProps = {
   agendamento: AppointmentDTO;
   confirmAction: AppointmentActionFn;
   cancelAction: AppointmentActionFn;
+  listAvailableAction?: AvailabilityActionFn;
+  rescheduleAction?: RescheduleAppointmentActionFn;
   /**
    * Avisa o container que a ação foi registrada, para que a comunicação com o
    * cliente sobreviva ao card (após o cancelamento ele sai da listagem).
    */
   onActionSuccess?: (agendamento: AppointmentDTO, acao: CustomerMessageAction) => void;
+  onEditSuccess?: (agendamento: AppointmentDTO) => void;
 };
 
 const STATUS_LABEL: Record<AppointmentStatus, string> = {
@@ -84,9 +99,13 @@ export function AppointmentCard({
   agendamento,
   confirmAction,
   cancelAction,
+  listAvailableAction,
+  rescheduleAction,
   onActionSuccess,
+  onEditSuccess,
 }: AppointmentCardProps) {
   const [dialogo, setDialogo] = useState<CustomerMessageAction | null>(null);
+  const [editando, setEditando] = useState(false);
   const [pendente, setPendente] = useState(false);
   const [erro, setErro] = useState<{ code: AppErrorCode; message: string } | null>(null);
 
@@ -229,6 +248,11 @@ export function AppointmentCard({
             ) : null}
 
             <div className="flex flex-wrap gap-2">
+              {listAvailableAction && rescheduleAction ? (
+                <Button variant="secondary" onClick={() => setEditando(true)}>
+                  {agendamentoTexts.editarAcao}
+                </Button>
+              ) : null}
               <Button
                 onClick={() => abrirDialogo("confirmacao")}
                 disabled={!podeConfirmar}
@@ -257,6 +281,20 @@ export function AppointmentCard({
           onCancel={fecharDialogo}
         />
       )}
+
+      {editando && listAvailableAction && rescheduleAction ? (
+        <EditAppointmentDialog
+          open={editando}
+          agendamento={agendamento}
+          listAvailableAction={listAvailableAction}
+          rescheduleAction={rescheduleAction}
+          onSuccess={(atualizado) => {
+            setEditando(false);
+            onEditSuccess?.(atualizado);
+          }}
+          onCancel={() => setEditando(false)}
+        />
+      ) : null}
     </article>
   );
 }

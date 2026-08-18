@@ -208,6 +208,63 @@ export const appointmentRepository = {
   },
 
   /**
+   * Move um agendamento ativo para outro slot em uma única transação.
+   * O destino precisa continuar solicitável no instante do commit; só depois
+   * dessa verificação o slot anterior é liberado e o novo é ocupado.
+   */
+  async reschedule(
+    agendamentoId: string,
+    data: string,
+    horario: string,
+    now: Date,
+  ): Promise<AppointmentDTO> {
+    const db = getFirestoreAdmin();
+    const ref = db.doc(firestorePaths.agendamento(agendamentoId));
+
+    return db.runTransaction(async (tx) => {
+      const snapshot = await tx.get(ref);
+
+      if (!snapshot.exists) {
+        throw new AppError("not_found", dominioTexts.agendamentoNaoEncontrado);
+      }
+
+      const appointment = toAppointment(snapshot.id, snapshot.data());
+      if (appointment.canceladoEm !== null || appointment.status === STATUS_CANCELADO) {
+        throw new AppError("conflict", dominioTexts.agendamentoCancelado);
+      }
+
+      if (appointment.data === data && appointment.horario === horario) {
+        throw new AppError("validation", dominioTexts.agendamentoMesmoHorario);
+      }
+
+      // No Firestore, todas as leituras da transação precisam anteceder as escritas.
+      const slotAnterior = await readSlotInTransaction(
+        tx,
+        appointment.data,
+        appointment.horario,
+      );
+      const slotDestino = await readSlotInTransaction(tx, data, horario);
+
+      if (slotDestino === null || !isSlotBookable(slotDestino, now)) {
+        throw new AppError("conflict", dominioTexts.horarioIndisponivel);
+      }
+
+      if (slotAnterior === null || slotAnterior.agendamentoId !== appointment.id) {
+        console.warn("[agendamentos] reagendamento recusado", {
+          motivo: "vinculo_anterior_ausente",
+        });
+        throw new AppError("conflict", dominioTexts.horarioIndisponivel);
+      }
+
+      releaseSlotInTransaction(tx, appointment.data, appointment.horario);
+      occupySlotInTransaction(tx, data, horario, appointment.id);
+      tx.update(ref, { data, horario });
+
+      return toAppointmentDTO({ ...appointment, data, horario }, now);
+    });
+  },
+
+  /**
    * Cancela o agendamento e libera o horário na mesma transação (PRD CA-05).
    *
    * O slot só é liberado se estiver vinculado a ESTE agendamento: liberar um

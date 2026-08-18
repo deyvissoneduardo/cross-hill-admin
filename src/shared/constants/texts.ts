@@ -36,6 +36,8 @@ export const feedbackTexts = {
   listaVaziaAgendamentos: "Nenhum agendamento para acompanhar agora.",
   falhaConfirmar: "Não foi possível confirmar o agendamento.",
   falhaCancelar: "Não foi possível cancelar o agendamento.",
+  falhaEditarAgendamento: "Não foi possível alterar a data e o horário.",
+  falhaCarregarHorarios: "Não foi possível carregar os horários disponíveis.",
   confirmacaoDuplicada: "Este agendamento já foi confirmado.",
   falhaCarregarAgenda: "Não foi possível carregar a agenda.",
   dataSemHorarios: "Nenhum horário nesta data.",
@@ -115,7 +117,15 @@ export const agendamentoTexts = {
 
   // Ações do card e dos diálogos (`design.md` §4.6).
   confirmarAcao: "Confirmar",
+  editarAcao: "Editar",
   cancelarAcao: "Cancelar",
+  editarDialogTitulo: "Editar agendamento",
+  editarDataLabel: "Nova data",
+  editarHorarioLabel: "Novo horário",
+  editarSelecioneData: "Selecione uma data para consultar os horários.",
+  editarSemHorarios: "Nenhum horário disponível nesta data.",
+  editarCarregandoHorarios: "Carregando horários...",
+  editarSalvarAcao: "Salvar alteração",
   dialogVoltar: "Voltar",
   confirmarDialogTitulo: "Confirmar agendamento",
   confirmarDialogConsequencia:
@@ -222,6 +232,7 @@ export const dominioTexts = {
   agendamentoJaCancelado: "Este agendamento já foi cancelado.",
   agendamentoCancelado: "Este agendamento foi cancelado.",
   horarioIndisponivel: "Horário indisponível.",
+  agendamentoMesmoHorario: "Escolha uma data ou horário diferente do atual.",
 
   // Campos de formulário/documento
   dataInvalida: "Data inválida.",

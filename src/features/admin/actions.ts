@@ -88,6 +88,47 @@ export const cancelAppointment = adminAction(
   },
 );
 
+/** Lista somente destinos realmente disponíveis para o editor do card. */
+export const listAvailableSlots = adminAction(
+  async (_session, isoDate: string): Promise<ActionResult<AvailabilitySlotDTO[]>> => {
+    try {
+      return actionOk(await availabilityService.listBookableSlots(isoDate));
+    } catch (error) {
+      return toActionResult(
+        error,
+        feedbackTexts.falhaCarregarHorarios,
+        "admin/horarios-reagendamento",
+      );
+    }
+  },
+);
+
+/** Move o agendamento para um slot disponível e atualiza o painel. */
+export const rescheduleAppointment = adminAction(
+  async (
+    _session,
+    agendamentoId: string,
+    data: string,
+    horario: string,
+  ): Promise<ActionResult<AppointmentDTO>> => {
+    try {
+      const reagendado = await bookingService.rescheduleAppointment(
+        agendamentoId,
+        data,
+        horario,
+      );
+      revalidatePath(DASHBOARD_PATH);
+      return actionOk(reagendado);
+    } catch (error) {
+      return toActionResult(
+        error,
+        feedbackTexts.falhaEditarAgendamento,
+        "admin/reagendamento",
+      );
+    }
+  },
+);
+
 /**
  * Salva a agenda manual da data com os horários liberados/bloqueados
  * informados (PRD US-05).

@@ -5,6 +5,8 @@ import { useCallback, useState, type ReactNode } from "react";
 import {
   AppointmentCard,
   type AppointmentActionFn,
+  type AvailabilityActionFn,
+  type RescheduleAppointmentActionFn,
 } from "@/src/features/agendamentos/components/AppointmentCard";
 import { APPOINTMENT_GRID_CLASS } from "@/src/features/agendamentos/components/appointmentListLayout";
 import { type AppointmentDTO } from "@/src/features/agendamentos/types";
@@ -34,6 +36,8 @@ type AppointmentListProps = {
   agendamentos: AppointmentDTO[];
   confirmAction: AppointmentActionFn;
   cancelAction: AppointmentActionFn;
+  listAvailableAction?: AvailabilityActionFn;
+  rescheduleAction?: RescheduleAppointmentActionFn;
   /** Ação de recuperação do estado vazio, ex.: "Atualizar" (`design.md` §5). */
   emptyAction?: ReactNode;
 };
@@ -49,6 +53,8 @@ export function AppointmentList({
   agendamentos,
   confirmAction,
   cancelAction,
+  listAvailableAction,
+  rescheduleAction,
   emptyAction,
 }: AppointmentListProps) {
   const [comunicacao, setComunicacao] = useState<CustomerCommunication | null>(null);
@@ -125,7 +131,10 @@ export function AppointmentList({
                 agendamento={agendamento}
                 confirmAction={confirmAction}
                 cancelAction={cancelAction}
+                listAvailableAction={listAvailableAction}
+                rescheduleAction={rescheduleAction}
                 onActionSuccess={handleActionSuccess}
+                onEditSuccess={() => setToast(agendamentoTexts.acaoConcluida)}
               />
             </li>
           ))}
