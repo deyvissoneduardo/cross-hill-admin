@@ -78,6 +78,7 @@ describe("settingsService (Firestore Emulator)", () => {
     vi.unstubAllEnvs();
     await Promise.all([
       wipeCollection(firestorePaths.configuracoes()),
+      wipeCollection(firestorePaths.posAgendamento()),
       wipeCollection(firestorePaths.agendamentos()),
       wipeCollection(firestorePaths.disponibilidade()),
     ]);
@@ -90,8 +91,14 @@ describe("settingsService (Firestore Emulator)", () => {
       expect(salvos).toEqual(TEXTOS_VALIDOS);
 
       // Persistido, não apenas devolvido pelo service.
-      const documento = await readDoc(firestorePaths.configuracaoPosAgendamento());
-      expect(documento).toMatchObject(TEXTOS_VALIDOS);
+      expect(await readDoc(firestorePaths.posAgendamentoTextos())).toEqual({
+        titulo: TEXTOS_VALIDOS.titulo,
+        descricao: TEXTOS_VALIDOS.descricao,
+      });
+      expect(await readDoc(firestorePaths.configuracaoPosAgendamento())).toMatchObject({
+        dicas: TEXTOS_VALIDOS.dicas,
+        avisos: TEXTOS_VALIDOS.avisos,
+      });
       expect(await settingsService.getPostBookingText()).toEqual(TEXTOS_VALIDOS);
     });
 
@@ -111,8 +118,15 @@ describe("settingsService (Firestore Emulator)", () => {
 
       // A configuração anterior sobreviveu inteira — nada foi sobrescrito.
       expect(await readDoc(firestorePaths.configuracaoPosAgendamento())).toMatchObject(
-        TEXTOS_VALIDOS,
+        {
+          dicas: TEXTOS_VALIDOS.dicas,
+          avisos: TEXTOS_VALIDOS.avisos,
+        },
       );
+      expect(await readDoc(firestorePaths.posAgendamentoTextos())).toEqual({
+        titulo: TEXTOS_VALIDOS.titulo,
+        descricao: TEXTOS_VALIDOS.descricao,
+      });
       expect(await settingsService.getPostBookingText()).toEqual(TEXTOS_VALIDOS);
     });
 
@@ -123,10 +137,12 @@ describe("settingsService (Firestore Emulator)", () => {
     it("documento fora do contrato e ignorado e a leitura cai no padrao", async () => {
       // Só chega assim por edição manual no console do Firebase.
       await seedDoc(firestorePaths.configuracaoPosAgendamento(), {
-        titulo: "",
-        descricao: "Confirmaremos o seu horário em breve.",
         dicas: [],
         avisos: [],
+      });
+      await seedDoc(firestorePaths.posAgendamentoTextos(), {
+        titulo: "",
+        descricao: "Confirmaremos o seu horário em breve.",
       });
 
       expect(await settingsService.getPostBookingText()).toEqual(defaultPostBookingText());

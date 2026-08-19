@@ -20,6 +20,8 @@ describe("firestorePaths", () => {
     expect(firestorePaths.agendamentos()).toBe("agendamentos");
     expect(firestorePaths.disponibilidade()).toBe("disponibilidade");
     expect(firestorePaths.configuracoes()).toBe("configuracoes");
+    expect(firestorePaths.posAgendamento()).toBe("pos_agendamento");
+    expect(firestorePaths.posAgendamentoTextos()).toBe("pos_agendamento/textos");
     expect(firestorePaths.configuracaoAparencia()).toBe("configuracoes/aparencia");
     expect(firestorePaths.configuracaoPosAgendamento()).toBe(
       "configuracoes/pos-agendamento",

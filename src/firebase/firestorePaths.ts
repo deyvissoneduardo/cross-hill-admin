@@ -12,6 +12,7 @@ const COLLECTIONS = {
   agendamentos: "agendamentos",
   disponibilidade: "disponibilidade",
   configuracoes: "configuracoes",
+  posAgendamento: "pos_agendamento",
 } as const;
 
 const CONFIG_DOCS = {
@@ -19,6 +20,10 @@ const CONFIG_DOCS = {
   posAgendamento: "pos-agendamento",
   profissional: "profissional",
   googleCalendar: "google-calendar",
+} as const;
+
+const POS_AGENDAMENTO_DOCS = {
+  textos: "textos",
 } as const;
 
 export const firestorePaths = {
@@ -36,6 +41,11 @@ export const firestorePaths = {
 
   /** Collection de configurações. */
   configuracoes: () => COLLECTIONS.configuracoes,
+  /** Collection de textos do pós-agendamento. */
+  posAgendamento: () => COLLECTIONS.posAgendamento,
+  /** Documento com título e descrição do pós-agendamento. */
+  posAgendamentoTextos: () =>
+    `${COLLECTIONS.posAgendamento}/${POS_AGENDAMENTO_DOCS.textos}`,
   /** Documento de cores da área do cliente. */
   configuracaoAparencia: () =>
     `${COLLECTIONS.configuracoes}/${CONFIG_DOCS.aparencia}`,

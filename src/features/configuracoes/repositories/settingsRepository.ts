@@ -78,20 +78,23 @@ export const settingsRepository = {
 
   /** Textos persistidos, ou `null` quando não configurados/fora do contrato. */
   async readPostBookingText(): Promise<PostBookingTextDTO | null> {
-    const snapshot = await getFirestoreAdmin()
-      .doc(firestorePaths.configuracaoPosAgendamento())
-      .get();
+    const db = getFirestoreAdmin();
+    const [listasSnapshot, textosSnapshot] = await Promise.all([
+      db.doc(firestorePaths.configuracaoPosAgendamento()).get(),
+      db.doc(firestorePaths.posAgendamentoTextos()).get(),
+    ]);
 
-    if (!snapshot.exists) {
+    if (!listasSnapshot.exists && !textosSnapshot.exists) {
       return null;
     }
 
-    const dados = snapshot.data() ?? {};
+    const listas = listasSnapshot.data() ?? {};
+    const textos = textosSnapshot.exists ? (textosSnapshot.data() ?? {}) : listas;
     const resultado = validatePostBookingText({
-      titulo: dados.titulo,
-      descricao: dados.descricao,
-      dicas: dados.dicas,
-      avisos: dados.avisos,
+      titulo: textos.titulo,
+      descricao: textos.descricao,
+      dicas: listas.dicas,
+      avisos: listas.avisos,
     });
 
     if (!resultado.valido) {
@@ -104,16 +107,69 @@ export const settingsRepository = {
     return resultado.textos;
   },
 
-  /** Grava os textos já validados. Substitui o documento inteiro. */
+  /** Grava os textos já validados. Título/descrição ficam em `pos_agendamento`. */
   async savePostBookingText(
     textos: PostBookingTextDTO,
     now: Date,
   ): Promise<PostBookingTextDTO> {
-    await getFirestoreAdmin()
-      .doc(firestorePaths.configuracaoPosAgendamento())
-      .set({ ...textos, atualizadoEm: now.toISOString() });
+    const db = getFirestoreAdmin();
+    const batch = db.batch();
+
+    batch.set(db.doc(firestorePaths.posAgendamentoTextos()), {
+      titulo: textos.titulo,
+      descricao: textos.descricao,
+    });
+
+    batch.set(db.doc(firestorePaths.configuracaoPosAgendamento()), {
+      dicas: [...textos.dicas],
+      avisos: [...textos.avisos],
+      atualizadoEm: now.toISOString(),
+    });
+
+    await batch.commit();
 
     return textos;
+  },
+
+  /**
+   * Grava título/descrição atuais no documento novo quando ainda há documento
+   * legado com tudo junto. Mantido separado para futuras migrações operacionais.
+   */
+  async migratePostBookingTextTitleDescription(now: Date): Promise<void> {
+    const db = getFirestoreAdmin();
+    const [listasSnapshot, textosSnapshot] = await Promise.all([
+      db.doc(firestorePaths.configuracaoPosAgendamento()).get(),
+      db.doc(firestorePaths.posAgendamentoTextos()).get(),
+    ]);
+
+    if (!listasSnapshot.exists || textosSnapshot.exists) {
+      return;
+    }
+
+    const dados = listasSnapshot.data() ?? {};
+    const resultado = validatePostBookingText({
+      titulo: dados.titulo,
+      descricao: dados.descricao,
+      dicas: dados.dicas,
+      avisos: dados.avisos,
+    });
+
+    if (!resultado.valido) {
+      return;
+    }
+
+    const batch = db.batch();
+    batch.set(db.doc(firestorePaths.posAgendamentoTextos()), {
+      titulo: resultado.textos.titulo,
+      descricao: resultado.textos.descricao,
+    });
+    batch.set(db.doc(firestorePaths.configuracaoPosAgendamento()), {
+      dicas: [...resultado.textos.dicas],
+      avisos: [...resultado.textos.avisos],
+      atualizadoEm: now.toISOString(),
+    });
+
+    await batch.commit();
   },
 
   /**

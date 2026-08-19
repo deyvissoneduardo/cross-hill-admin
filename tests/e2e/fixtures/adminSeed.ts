@@ -156,8 +156,11 @@ async function seedFirestore(dataAgenda: string): Promise<void> {
       ...SEED_APARENCIA,
       atualizadoEm: SEED_INSTANTE,
     }),
+    writeDocument("pos_agendamento/textos", {
+      titulo: SEED_POS_AGENDAMENTO.titulo,
+      descricao: SEED_POS_AGENDAMENTO.descricao,
+    }),
     writeDocument("configuracoes/pos-agendamento", {
-      ...SEED_POS_AGENDAMENTO,
       dicas: [...SEED_POS_AGENDAMENTO.dicas],
       avisos: [...SEED_POS_AGENDAMENTO.avisos],
       atualizadoEm: SEED_INSTANTE,
