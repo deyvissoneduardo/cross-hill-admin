@@ -194,7 +194,7 @@ export function AppointmentCard({
       aria-labelledby={tituloId}
       aria-busy={pendente || undefined}
       className={
-        `h-full ${APPOINTMENT_CARD_FRAME_CLASS} transition-colors duration-150 ease-out ` +
+        `h-full w-full ${APPOINTMENT_CARD_FRAME_CLASS} transition-colors duration-150 ease-out ` +
         "motion-reduce:transition-none hover:border-(--color-border-strong)"
       }
     >
@@ -229,9 +229,10 @@ export function AppointmentCard({
         >
           {agendamento.telefone}
         </a>
-        <p className="text-sm text-(--color-muted)">
-          {`${agendamentoTexts.profissionalRotulo}: ${agendamento.profissional}`}
-        </p>
+        {/*
+          Profissional unico do produto: nao exibimos esta linha no card para
+          manter a listagem mais enxuta.
+        */}
       </div>
 
       {pendente ? (

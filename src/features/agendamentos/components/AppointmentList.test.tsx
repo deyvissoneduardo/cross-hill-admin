@@ -14,7 +14,7 @@ import { actionOk } from "@/src/shared/errors";
  * CT-01, CT-02 — listagem principal do painel (`design.md` §4.2).
  *
  * Invariantes:
- * - CT-01: agendamento ativo vira card com cliente, telefone, profissional,
+ * - CT-01: agendamento ativo vira card com cliente, telefone,
  *   data, horário e status.
  * - CT-02: agendamento cancelado permanece visível com seu status.
  *
@@ -80,10 +80,10 @@ describe("AppointmentList", () => {
     const cardAguardando = screen.getByRole("article", { name: "João Pereira" });
     expect(within(cardAguardando).getByText("5511988887777")).toBeInTheDocument();
     expect(
-      within(cardAguardando).getByText(
+      within(cardAguardando).queryByText(
         `${agendamentoTexts.profissionalRotulo}: Ana Souza`,
       ),
-    ).toBeInTheDocument();
+    ).toBeNull();
     expect(within(cardAguardando).getByText("15/08 · 09:00")).toHaveAttribute(
       "datetime",
       "2026-08-15T09:00",
@@ -95,10 +95,10 @@ describe("AppointmentList", () => {
     const cardConfirmado = screen.getByRole("article", { name: "Marina Alves" });
     expect(within(cardConfirmado).getByText("5511977776666")).toBeInTheDocument();
     expect(
-      within(cardConfirmado).getByText(
+      within(cardConfirmado).queryByText(
         `${agendamentoTexts.profissionalRotulo}: Ana Souza`,
       ),
-    ).toBeInTheDocument();
+    ).toBeNull();
     expect(within(cardConfirmado).getByText("10/08 · 08:00")).toHaveAttribute(
       "datetime",
       "2026-08-10T08:00",
@@ -126,6 +126,8 @@ describe("AppointmentList", () => {
 
     const cardCancelado = screen.getByRole("article", { name: "Rita Nunes" });
     expect(within(cardCancelado).getByText(agendamentoTexts.statusCancelado)).toBeVisible();
+    expect(cardCancelado).toHaveClass("w-full");
+    expect(cardCancelado).toHaveClass("min-h-48");
     expect(
       within(cardCancelado).queryByRole("button", { name: agendamentoTexts.cancelarAcao }),
     ).toBeNull();
@@ -174,6 +176,96 @@ describe("AppointmentList", () => {
     expect(screen.queryByRole("article", { name: "Cliente Domingo" })).toBeNull();
     expect(
       screen.queryByRole("article", { name: "Cliente Próxima Semana" }),
+    ).toBeNull();
+  });
+
+  it("filtra os cards por status", () => {
+    const aguardando = toAppointmentDTO(buildAppointment(), AGORA);
+    const confirmado = toAppointmentDTO(
+      buildAppointment({
+        id: "agd-confirmado",
+        cliente: "Marina Alves",
+        data: "2026-08-10",
+        horario: "08:00",
+        adminConfirmadoEm: "2026-08-09T14:00:00.000Z",
+        profissionalConfirmadoEm: "2026-08-09T15:00:00.000Z",
+      }),
+      AGORA,
+    );
+    const cancelado = toAppointmentDTO(
+      buildAppointment({
+        id: "agd-cancelado",
+        cliente: "Rita Nunes",
+        status: "cancelado",
+        canceladoEm: "2026-08-13T18:00:00.000Z",
+      }),
+      AGORA,
+    );
+
+    renderList([aguardando, confirmado, cancelado]);
+
+    fireEvent.change(screen.getByLabelText(agendamentoTexts.filtroStatusLabel), {
+      target: { value: "cancelado" },
+    });
+
+    expect(screen.getByRole("article", { name: "Rita Nunes" })).toBeVisible();
+    expect(screen.queryByRole("article", { name: "João Pereira" })).toBeNull();
+    expect(screen.queryByRole("article", { name: "Marina Alves" })).toBeNull();
+
+    fireEvent.change(screen.getByLabelText(agendamentoTexts.filtroStatusLabel), {
+      target: { value: "aguardando_agendamento" },
+    });
+
+    expect(screen.getByRole("article", { name: "João Pereira" })).toBeVisible();
+    expect(screen.queryByRole("article", { name: "Rita Nunes" })).toBeNull();
+  });
+
+  it("combina filtro de semana com filtro de status", () => {
+    const aguardandoNaSemana = toAppointmentDTO(
+      buildAppointment({
+        id: "agd-semana-aguardando",
+        cliente: "Cliente Semana",
+        data: "2026-08-21",
+      }),
+      AGORA,
+    );
+    const canceladoNaSemana = toAppointmentDTO(
+      buildAppointment({
+        id: "agd-semana-cancelado",
+        cliente: "Cancelado Semana",
+        data: "2026-08-21",
+        status: "cancelado",
+        canceladoEm: "2026-08-13T18:00:00.000Z",
+      }),
+      AGORA,
+    );
+    const canceladoForaDaSemana = toAppointmentDTO(
+      buildAppointment({
+        id: "agd-outra-semana-cancelado",
+        cliente: "Cancelado Outra Semana",
+        data: "2026-08-24",
+        status: "cancelado",
+        canceladoEm: "2026-08-13T18:00:00.000Z",
+      }),
+      AGORA,
+    );
+
+    renderList([aguardandoNaSemana, canceladoNaSemana, canceladoForaDaSemana]);
+
+    fireEvent.change(screen.getByLabelText(agendamentoTexts.filtroPeriodoLabel), {
+      target: { value: "semana" },
+    });
+    fireEvent.change(screen.getByLabelText(agendamentoTexts.filtroDataLabel), {
+      target: { value: "2026-08-21" },
+    });
+    fireEvent.change(screen.getByLabelText(agendamentoTexts.filtroStatusLabel), {
+      target: { value: "cancelado" },
+    });
+
+    expect(screen.getByRole("article", { name: "Cancelado Semana" })).toBeVisible();
+    expect(screen.queryByRole("article", { name: "Cliente Semana" })).toBeNull();
+    expect(
+      screen.queryByRole("article", { name: "Cancelado Outra Semana" }),
     ).toBeNull();
   });
 

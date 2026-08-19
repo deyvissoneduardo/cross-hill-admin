@@ -101,6 +101,8 @@ export const agendamentoTexts = {
   filtroDia: "Dia",
   filtroSemana: "Semana",
   filtroDataLabel: "Data de referência",
+  filtroStatusLabel: "Status",
+  filtroStatusTodos: "Todos os status",
   filtroSemResultados: "Nenhum agendamento no período selecionado.",
 
   // Status canônico (PRD RN-01/RN-15/RN-16) — badge combina cor E texto (§9).

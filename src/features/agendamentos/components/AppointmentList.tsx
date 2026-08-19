@@ -9,7 +9,10 @@ import {
   type RescheduleAppointmentActionFn,
 } from "@/src/features/agendamentos/components/AppointmentCard";
 import { APPOINTMENT_GRID_CLASS } from "@/src/features/agendamentos/components/appointmentListLayout";
-import { type AppointmentDTO } from "@/src/features/agendamentos/types";
+import {
+  type AppointmentDTO,
+  type AppointmentStatus,
+} from "@/src/features/agendamentos/types";
 import {
   buildCustomerMessage,
   buildWhatsAppUrl,
@@ -20,6 +23,7 @@ import { agendamentoTexts, feedbackTexts } from "@/src/shared/constants/texts";
 import { isIsoDate, todayIsoDate } from "@/src/shared/time";
 
 type PeriodFilter = "todos" | "dia" | "semana";
+type StatusFilter = "todos" | AppointmentStatus;
 
 /**
  * Listagem operacional do painel (`design.md` §4.2 e §5).
@@ -64,13 +68,10 @@ export function AppointmentList({
   >({});
   const [toast, setToast] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState<PeriodFilter>("todos");
+  const [status, setStatus] = useState<StatusFilter>("todos");
   const [dataReferencia, setDataReferencia] = useState(todayIsoDate);
 
-  const filtrados = filterAppointmentsByPeriod(
-    agendamentos,
-    periodo,
-    dataReferencia,
-  );
+  const filtrados = filterAppointments(agendamentos, periodo, dataReferencia, status);
 
   const handleActionSuccess = useCallback(
     (agendamento: AppointmentDTO, acao: CustomerMessageAction) => {
@@ -126,6 +127,28 @@ export function AppointmentList({
             />
           </div>
         )}
+
+        <div className="flex flex-1 flex-col gap-1.5">
+          <label
+            htmlFor="agendamentos-filtro-status"
+            className="text-sm font-medium text-(--color-foreground)"
+          >
+            {agendamentoTexts.filtroStatusLabel}
+          </label>
+          <select
+            id="agendamentos-filtro-status"
+            value={status}
+            onChange={(event) => setStatus(event.currentTarget.value as StatusFilter)}
+            className="min-h-11 rounded-lg border border-(--color-border) bg-(--color-surface-2) px-3 text-sm text-(--color-foreground) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--color-focus-ring)"
+          >
+            <option value="todos">{agendamentoTexts.filtroStatusTodos}</option>
+            <option value="aguardando_agendamento">
+              {agendamentoTexts.statusAguardando}
+            </option>
+            <option value="confirmado">{agendamentoTexts.statusConfirmado}</option>
+            <option value="cancelado">{agendamentoTexts.statusCancelado}</option>
+          </select>
+        </div>
       </div>
 
       {filtrados.length === 0 ? (
@@ -183,6 +206,21 @@ export function filterAppointmentsByPeriod(
   return appointments.filter(
     (appointment) => appointment.data >= weekStart && appointment.data <= weekEnd,
   );
+}
+
+export function filterAppointments(
+  appointments: readonly AppointmentDTO[],
+  period: PeriodFilter,
+  referenceDate: string,
+  status: StatusFilter,
+): AppointmentDTO[] {
+  const byPeriod = filterAppointmentsByPeriod(appointments, period, referenceDate);
+
+  if (status === "todos") {
+    return byPeriod;
+  }
+
+  return byPeriod.filter((appointment) => appointment.status === status);
 }
 
 /** Retorna segunda e domingo da semana sem depender do fuso do navegador. */

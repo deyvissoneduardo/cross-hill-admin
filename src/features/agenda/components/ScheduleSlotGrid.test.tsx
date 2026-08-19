@@ -121,9 +121,12 @@ describe("ScheduleSlotGrid", () => {
   it("adiciona um novo horário e o inclui no salvamento", async () => {
     const { saveAction } = renderGrid([]);
 
-    fireEvent.change(screen.getByLabelText(agendaTexts.novoHorarioLabel), {
-      target: { value: "10:30" },
-    });
+    const novoHorario = screen.getByLabelText(agendaTexts.novoHorarioLabel);
+    expect(novoHorario).toHaveAttribute("type", "text");
+    expect(novoHorario).toHaveAttribute("placeholder", "HH:mm");
+    expect(novoHorario).toHaveAttribute("pattern", "[0-9]{2}:[0-9]{2}");
+
+    fireEvent.change(novoHorario, { target: { value: "10:30" } });
     fireEvent.click(screen.getByRole("button", { name: feedbackTexts.acaoAdicionarHorario }));
 
     expect(
@@ -135,6 +138,48 @@ describe("ScheduleSlotGrid", () => {
     await waitFor(() => expect(saveAction).toHaveBeenCalledTimes(1));
     expect(saveAction).toHaveBeenCalledWith(ISO_DATE, [
       { horario: "10:30", liberado: true },
+    ] satisfies AvailabilitySlotInput[]);
+  });
+
+  it("mascara quatro dígitos como HH:mm e salva o valor formatado", async () => {
+    const { saveAction } = renderGrid([]);
+
+    const novoHorario = screen.getByLabelText(agendaTexts.novoHorarioLabel);
+    fireEvent.change(novoHorario, { target: { value: "1630" } });
+
+    expect(novoHorario).toHaveValue("16:30");
+
+    fireEvent.click(screen.getByRole("button", { name: feedbackTexts.acaoAdicionarHorario }));
+
+    expect(
+      screen.getByRole("checkbox", { name: `${agendaTexts.liberadoLabel} 16:30` }),
+    ).toBeChecked();
+
+    fireEvent.click(screen.getByRole("button", { name: agendaTexts.salvarAcao }));
+
+    await waitFor(() => expect(saveAction).toHaveBeenCalledTimes(1));
+    expect(saveAction).toHaveBeenCalledWith(ISO_DATE, [
+      { horario: "16:30", liberado: true },
+    ] satisfies AvailabilitySlotInput[]);
+  });
+
+  it("normaliza horário digitado para o formato 24 horas antes de salvar", async () => {
+    const { saveAction } = renderGrid([]);
+
+    fireEvent.change(screen.getByLabelText(agendaTexts.novoHorarioLabel), {
+      target: { value: "9:5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: feedbackTexts.acaoAdicionarHorario }));
+
+    expect(
+      screen.getByRole("checkbox", { name: `${agendaTexts.liberadoLabel} 09:05` }),
+    ).toBeChecked();
+
+    fireEvent.click(screen.getByRole("button", { name: agendaTexts.salvarAcao }));
+
+    await waitFor(() => expect(saveAction).toHaveBeenCalledTimes(1));
+    expect(saveAction).toHaveBeenCalledWith(ISO_DATE, [
+      { horario: "09:05", liberado: true },
     ] satisfies AvailabilitySlotInput[]);
   });
 

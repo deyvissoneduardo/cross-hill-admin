@@ -26,10 +26,14 @@ export const APPOINTMENT_GRID_CLASS =
  * ela, alterar raio/borda/padding do card real exige lembrar de replicar a
  * mudança no esqueleto — e nada detecta o drift quando alguém esquece.
  *
+ * A altura mínima reserva o espaço do card operacional em
+ * `aguardando agendamento` (dados + rodapé de ações). Cards cancelados não
+ * exibem ações, mas preservam a mesma presença visual na grade.
+ *
  * `h-full` e as transições (`transition-colors`, `hover:border-...`) ficam de
  * fora de propósito: são específicas do card real interativo e não fazem
  * sentido no esqueleto estático.
  */
 export const APPOINTMENT_CARD_FRAME_CLASS =
-  "flex flex-col gap-3 rounded-lg border border-(--color-border) " +
+  "flex min-h-48 flex-col gap-3 rounded-lg border border-(--color-border) " +
   "bg-(--color-surface-2) p-4";

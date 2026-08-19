@@ -191,10 +191,13 @@ export function ScheduleSlotGrid({ isoDate, slots, saveAction }: ScheduleSlotGri
           </label>
           <input
             id="agenda-novo-horario"
-            type="time"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]{2}:[0-9]{2}"
+            placeholder="HH:mm"
             value={novoHorario}
             disabled={pending}
-            onChange={(event) => setNovoHorario(event.target.value)}
+            onChange={(event) => setNovoHorario(maskTimeInput(event.target.value))}
             className={
               "min-h-11 rounded-lg border border-(--color-border) bg-(--color-surface-2) " +
               "px-3 text-sm text-(--color-foreground) " +
@@ -237,4 +240,19 @@ function formatTimeSafe(horario: string): string {
   } catch {
     return horario;
   }
+}
+
+function maskTimeInput(value: string): string {
+  const trimmed = value.trim();
+  if (/^\d{1,2}:\d{1,2}$/.test(trimmed)) {
+    return normalizeTimeOfDay(trimmed);
+  }
+
+  const digits = value.replace(/\D/g, "").slice(0, 4);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 }
